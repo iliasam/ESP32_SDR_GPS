@@ -21,6 +21,12 @@
     "tuple": "c",
     "ui.h": "c",
     "ui_helpers.h": "c",
-    "sdkconfig.h": "c"
+    "sdkconfig.h": "c",
+    "esp_timer.h": "c",
+    "timer_u32.h": "c",
+    "signal_capture.h": "c",
+    "future": "c",
+    "system_error": "c",
+    "regex": "c"
   }
 }

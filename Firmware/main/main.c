@@ -21,7 +21,7 @@
 #include "esp_system.h"
 #include "driver/gpio.h"
 #include "esp_timer.h"
-#include "gui.h"
+#include "lvgl_gui.h"
 #include "hardware.h"
 #include "config.h"
 #include <rom/ets_sys.h>
@@ -37,6 +37,7 @@
   #include "solving.h"
 #endif
 
+/// @brief State of all GPS receiving channells
 gps_ch_t gps_channels[GPS_SAT_CNT];
 
 //***************************************************************

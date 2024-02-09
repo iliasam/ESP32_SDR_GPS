@@ -13,6 +13,9 @@
 #include "math.h"
 #include "time.h"
 
+#include "lvgl_gui.h"
+
+
 #if (ENABLE_CALC_POSITION)
   #include "solving.h"
 #endif
@@ -121,17 +124,16 @@ void gps_master_handling(gps_ch_t* channels, uint8_t index)
 
   if (gps_common_need_acq)
   {
-    //print_state_update_acquisition(channels, signal_capture_get_packet_cnt());
-    //print_state_handling(signal_capture_get_packet_cnt());
+    lvgl_store_gps_state(channels);
   }
-  
-  if (index == 0xFF) //dummy tracking
+  else
   {
-    gps_master_nav_handling(channels);
-    
-    if (gps_common_need_acq == 0)
+    //Tracking running
+    if (index == 0xFF) // dummy tracking
     {
-      //print_state_handling(signal_capture_get_packet_cnt());
+      gps_master_nav_handling(channels);
+
+      lvgl_store_gps_state(channels);
     }
   }
 }

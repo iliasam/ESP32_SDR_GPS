@@ -25,7 +25,7 @@ void btnStartStopPressed(lv_event_t * e)
 	//lv_obj_set_click(ui_btnStartStop, false);
 	lv_obj_add_state(ui_btnStartStop, LV_STATE_DISABLED);
 
-	lv_obj_tree_walk(ui_PanelConfigureSats, disable_object_cb, NULL);
+	lv_obj_tree_walk(ui_PanelConfigureSats, disable_object_cb, NULL); //lock panel elements
 	lv_obj_clear_state(ui_PanelConfigureSats, LV_STATE_DISABLED);
 
 	lv_obj_clear_state(ui_btnStop, LV_STATE_DISABLED);
@@ -49,10 +49,11 @@ void btnStopClick(lv_event_t * e)
 	//Set active
 	lv_obj_clear_state(ui_btnStartStop, LV_STATE_DISABLED);
 
-	lv_obj_tree_walk(ui_PanelConfigureSats, enable_object_cb, NULL);
+	lv_obj_tree_walk(ui_PanelConfigureSats, enable_object_cb, NULL);//activate panel elements
 }
 
 void btnCodeSearchClick(lv_event_t * e)
 {
-	// Your code here
+	lv_indev_wait_release(lv_indev_get_act());
+  	_ui_screen_change(&ui_ScreenState, LV_SCR_LOAD_ANIM_MOVE_LEFT, 0, 0, &ui_ScreenState_screen_init);
 }
