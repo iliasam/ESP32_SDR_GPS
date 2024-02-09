@@ -1,0 +1,21 @@
+dependencies:
+  idf:
+    component_hash: null
+    source:
+      type: idf
+    version: 5.0.2
+  lvgl/lvgl:
+    component_hash: 948bff879a345149b83065535bbc4a026ce9f47498a22881e432a264b9098015
+    source:
+      service_url: https://api.components.espressif.com/
+      type: service
+    version: 8.3.11
+  vitoralho/lvgl_esp32_drivers:
+    component_hash: fcf798a2453b6e65e801c006029fe2fe0703649174b3bc38738e62a48f4170e5
+    source:
+      service_url: https://api.components.espressif.com/
+      type: service
+    version: 1.0.5
+manifest_hash: 11e0f68b4ca9d770d2cd8cc51a8b1049d0ddb6e0bd2ba3d4adbf97ff6a437038
+target: esp32
+version: 1.0.0

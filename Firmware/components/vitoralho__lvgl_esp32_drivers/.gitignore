@@ -50,6 +50,13 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
-Firmware/managed_components/
-Firmware/sdkconfig.old
-Firmware/debug.log
+
+# MacOS
+.DS_Store
+
+# ESP-IDF build dir
+build
+
+# Kconfig files
+sdkconfig
+sdkconfig.old

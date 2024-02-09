@@ -1,0 +1,10 @@
+SET(SOURCES screens/ui_ScreenConfigure.c
+    screens/ui_ScreenState.c
+    screens/ui_ScreenIQ.c
+    screens/ui_ScreenPosition.c
+    ui.c
+    components/ui_comp_hook.c
+    ui_helpers.c
+    ui_events.c)
+
+add_library(ui ${SOURCES})

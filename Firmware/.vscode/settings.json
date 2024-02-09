@@ -1,0 +1,25 @@
+{
+  "C_Cpp.intelliSenseEngine": "Tag Parser",
+  "idf.adapterTargetName": "esp32",
+  "idf.openOcdConfigs": [
+    "board/esp32-wrover-kit-3.3v.cfg"
+  ],
+  "idf.portWin": "COM14",
+  "idf.flashType": "UART",
+  "files.associations": {
+    "esp_system.h": "c",
+    "gpio.h": "c",
+    "lvgl.h": "c",
+    "complex": "c",
+    "config.h": "c",
+    "ets_sys.h": "c",
+    "i2c_manager.h": "c",
+    "array": "c",
+    "string": "c",
+    "string_view": "c",
+    "*.tcc": "c",
+    "tuple": "c",
+    "ui.h": "c",
+    "ui_helpers.h": "c"
+  }
+}
