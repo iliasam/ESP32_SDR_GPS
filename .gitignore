@@ -53,3 +53,4 @@ dkms.conf
 Firmware/managed_components/
 Firmware/sdkconfig.old
 Firmware/debug.log
+Firmware/build/

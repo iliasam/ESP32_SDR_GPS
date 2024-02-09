@@ -20,6 +20,7 @@
     "*.tcc": "c",
     "tuple": "c",
     "ui.h": "c",
-    "ui_helpers.h": "c"
+    "ui_helpers.h": "c",
+    "sdkconfig.h": "c"
   }
 }

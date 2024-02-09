@@ -1,10 +1,13 @@
-/* Hello World Example
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
+/* 
+* ESP32 SDR GPS
+* By ILIASAM 2024
+* 
+* Configured for ESP32-2432S024C board (SPI	ILI9341 + CST820 capacitive touchscreen)
+* -O2 optimization is used here
+* See config.h for GPS-SPI pinout
+* LCD+Touch pinut is set by menuconfig
+* LVGL 8.3.0 is a managed component, must be downloaded by ESP-IDF
+* ESP-IDF 5.0 is used here
 */
 #include <stdio.h>
 #include <inttypes.h>
