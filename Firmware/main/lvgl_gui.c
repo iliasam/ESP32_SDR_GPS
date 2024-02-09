@@ -204,12 +204,12 @@ void startup_actions(void)
 void create_state_table(void)
 {
     table_state = lv_table_create(ui_ScreenState);
-    lv_obj_set_size(table_state, 309, 150);
+    lv_obj_set_size(table_state, 309, 156);
     lv_obj_set_x(table_state, 6);
-    lv_obj_set_y(table_state, 26);
+    lv_obj_set_y(table_state, 22);
 
-    lv_obj_set_style_pad_top(table_state, 1, LV_PART_ITEMS);
-    lv_obj_set_style_pad_bottom(table_state, 2, LV_PART_ITEMS);
+    lv_obj_set_style_pad_top(table_state, 2, LV_PART_ITEMS);
+    lv_obj_set_style_pad_bottom(table_state, 3, LV_PART_ITEMS);
     lv_obj_set_style_pad_left(table_state, 2, LV_PART_ITEMS);
     lv_obj_set_style_pad_right(table_state, 2, LV_PART_ITEMS);
 
@@ -248,6 +248,9 @@ void lvgl_store_gps_state(gps_ch_t *channels)
 
         gps_channels_gui[i].track_if_freq_offset_hz = 
             (int16_t)channels[i].tracking_data.if_freq_offset_hz;
+
+        gps_channels_gui[i].nav_pol_found = channels[i].nav_data.polarity_found;
+        gps_channels_gui[i].nav_subframe_cnt = channels[i].eph_data.sub_cnt;
     }
 }
 
@@ -257,7 +260,7 @@ void lvgl_redraw_state_screen(void)
 
     float time = (float)signal_capture_get_packet_cnt() / 1000.0f;
     sprintf(tmp_txt, "SYS RUNTIME: %.1f s", time);
-    lv_label_set_text(ui_Label16, tmp_txt); //lblSateCommon
+    lv_label_set_text(ui_lblStateCommon, tmp_txt);
 
     for (uint8_t i = 0; i < GPS_SAT_CNT; i++)
     {
@@ -328,6 +331,13 @@ uint16_t print_state_tracking_channel(
 
     line_txt += char_cnt;
     len -= char_cnt;
+
+    if (channel->nav_pol_found)
+    {
+        char_cnt = snprintf(line_txt, len, "|SUBF=%d", channel->nav_subframe_cnt);
+        line_txt += char_cnt;
+        len -= char_cnt;
+    }
 
     return (max_len - len);
 }

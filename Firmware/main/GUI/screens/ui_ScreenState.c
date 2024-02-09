@@ -18,12 +18,12 @@ void ui_ScreenState_screen_init(void)
     lv_obj_set_align(ui_Label2, LV_ALIGN_CENTER);
     lv_label_set_text(ui_Label2, "State");
 
-    ui_Label16 = lv_label_create(ui_ScreenState);
-    lv_obj_set_width(ui_Label16, LV_SIZE_CONTENT);   /// 1
-    lv_obj_set_height(ui_Label16, LV_SIZE_CONTENT);    /// 1
-    lv_obj_set_x(ui_Label16, 7);
-    lv_obj_set_y(ui_Label16, 167);
-    lv_label_set_text(ui_Label16, "MCU TIME:\n");
+    ui_lblStateCommon = lv_label_create(ui_ScreenState);
+    lv_obj_set_width(ui_lblStateCommon, LV_SIZE_CONTENT);   /// 1
+    lv_obj_set_height(ui_lblStateCommon, LV_SIZE_CONTENT);    /// 1
+    lv_obj_set_x(ui_lblStateCommon, 10);
+    lv_obj_set_y(ui_lblStateCommon, 181);
+    lv_label_set_text(ui_lblStateCommon, "MCU TIME:\n");
 
     lv_obj_add_event_cb(ui_ScreenState, ui_event_ScreenState, LV_EVENT_ALL, NULL);
 

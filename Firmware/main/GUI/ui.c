@@ -57,7 +57,7 @@ void ui_ScreenState_screen_init(void);
 void ui_event_ScreenState(lv_event_t * e);
 lv_obj_t * ui_ScreenState;
 lv_obj_t * ui_Label2;
-lv_obj_t * ui_Label16;
+lv_obj_t * ui_lblStateCommon;
 
 
 // SCREEN: ui_ScreenIQ

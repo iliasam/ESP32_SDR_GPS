@@ -14,6 +14,8 @@ typedef struct
     float                   track_snr;
     int16_t                 track_if_freq_offset_hz;
     uint16_t                nav_word_cnt;
+    uint8_t                 nav_pol_found;
+    uint16_t                nav_subframe_cnt;
     uint8_t	                prn; //Sat PRN code
 } gps_gui_ch_t;
 
