@@ -129,6 +129,21 @@ void gps_pos_solve(obsd_t *obs_p)
   }
 }
 
+// Main function
+// Execution can take time (> 20ms)
+void gps_pos_solve_direct(obsd_t *obs_p)
+{
+  flag_solving_busy = 1;
+  int res = pntpos(obs_p, GPS_SAT_CNT, &nav_data, &gps_sol);
+  if (res > 0)
+  {
+    ecef2pos(gps_sol.rr, final_pos);//radians
+    final_pos[0] = final_pos[0] * R2D;
+    final_pos[1] = final_pos[1] * R2D;
+  }
+  flag_solving_busy = 0;
+}
+
 /* single-point positioning ----------------------------------------------------
 * compute receiver position, velocity, clock bias by single-point positioning
 * with pseudorange and doppler observables

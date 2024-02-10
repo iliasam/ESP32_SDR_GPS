@@ -36,11 +36,14 @@ obsd_t obsd[GPS_SAT_CNT];
 //Flag that at least one sat. need acquisition
 uint8_t gps_common_need_acq = 1;
 
+/// Need position solving
+uint8_t gps_common_need_solve = 0;
+
 uint8_t gps_start_flag = 1;
 
 void gps_master_nav_handling(gps_ch_t* channels);
 void gps_master_transmit_obs(gps_ch_t* channels);
-void gps_master_calculate_pos(gps_ch_t* channels);
+void gps_master_calculate_pos_handling(gps_ch_t* channels);
 
 void gps_master_final_pseudorange_calc(
   gps_ch_t* channels, uint32_t curr_tick_time, 
@@ -263,7 +266,7 @@ void gps_master_nav_handling(gps_ch_t* channels)
   #endif
   
   #if (ENABLE_CALC_POSITION)
-  gps_master_calculate_pos(channels);
+  gps_master_calculate_pos_handling(channels);
   #endif
 }
 
@@ -367,15 +370,15 @@ void gps_master_code_phase_filter_reset(
 
 
 #if (ENABLE_CALC_POSITION)
-//Calculate receiver positon - handling
-void gps_master_calculate_pos(gps_ch_t* channels)
+//Calculate receiver positon - handling, do not run solving here!
+//Called from high priority task
+void gps_master_calculate_pos_handling(gps_ch_t* channels)
 {
   static uint32_t prev_calc_time_ms = 0;
   
-  if (solving_is_busy())
+  if (solving_is_busy() || gps_common_need_solve)
   {
     //Processing already runing solving
-    gps_pos_solve(obsd);
     return;
   }
   
@@ -392,13 +395,25 @@ void gps_master_calculate_pos(gps_ch_t* channels)
         eph_ok_cnt++;
     }
     
+    //Copy data and set a flag for less priority task
     sdrobs2obsd(channels, GPS_SAT_CNT, obsd);
     if (eph_ok_cnt == GPS_SAT_CNT)
     {
-      printf("New pos search\n");
-      gps_pos_solve(obsd);
+      gps_common_need_solve = 1;
     }
   }
+}
+
+/// @brief Process position solving - can be long, called from less priority task
+/// @param  
+void gps_master_run_solving(void)
+{
+  if (gps_common_need_solve == 0)
+    return;
+
+  printf("New pos search\n");
+  gps_pos_solve_direct(obsd);
+  gps_common_need_solve = 0;
 }
 #endif
 
@@ -430,6 +445,11 @@ uint8_t gps_master_is_code_search3(gps_ch_t* channels)
 uint8_t gps_master_need_acq(void)
 {
   return gps_common_need_acq;
+}
+
+uint8_t gps_master_need_solve(void)
+{
+  return gps_common_need_solve;
 }
 
 

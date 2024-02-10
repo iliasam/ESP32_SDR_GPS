@@ -28,6 +28,8 @@ typedef struct {        /* solution type */
 
 void gps_pos_solve_init(gps_ch_t* channels);
 void gps_pos_solve(obsd_t *obs_p);
+void gps_pos_solve_direct(obsd_t *obs_p);
+
 void ecef2pos(const double *r, double *pos);
 int pntpos(const obsd_t *obs, int n, const nav_t *nav, sol_t *sol);
 int pntpos_iterative(const obsd_t *obs, int n, const nav_t *nav, sol_t *sol);

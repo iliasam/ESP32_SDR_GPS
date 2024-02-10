@@ -137,11 +137,19 @@ void main_task(void *pvParameter)
     while (1)
     {
         uint8_t need_slow = gps_master_need_acq();
+        uint8_t need_solve = gps_master_need_solve();
         if (need_slow)
         {
-            // Not realtime
+            // Acqusition - Not realtime
             main_slow_data_proc();
         }
+#if (ENABLE_CALC_POSITION)
+        else if (need_solve)
+        {
+          gps_master_run_solving();
+          vTaskDelay(1); //Give time for RTOS
+        }
+#endif
         else
         {
             vTaskDelay(1); //Give time for RTOS
