@@ -411,7 +411,7 @@ void gps_master_run_solving(void)
   if (gps_common_need_solve == 0)
     return;
 
-  printf("New pos search\n");
+  //printf("New pos search\n");
   gps_pos_solve_direct(obsd);
   gps_common_need_solve = 0;
 }

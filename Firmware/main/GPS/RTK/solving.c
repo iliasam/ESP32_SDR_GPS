@@ -57,8 +57,6 @@ double *mat(int n, int m);
 int pntpos(const obsd_t *obs, int n, const nav_t *nav, sol_t *sol);
 int satposs(gtime_t teph, const obsd_t *obs, int n, const nav_t *nav,
 	int ephopt, double *rs, double *dts, double *var, int *svh);
-int satposs_iterative(gtime_t teph, const obsd_t *obs, int n, const nav_t *nav,
-  int ephopt, double *rs, double *dts, double *var, int *svh);
 static int ephclk(gtime_t time, gtime_t teph, int sat, const nav_t *nav, double *dts);
 int satpos(gtime_t time, gtime_t teph, int sat, int ephopt,
 	const nav_t *nav, double *rs, double *dts, double *var,
@@ -68,9 +66,6 @@ static int ephpos(gtime_t time, gtime_t teph, int sat, const nav_t *nav,
 void eph2pos(gtime_t time, const eph_t *eph, double *rs, double *dts,
 	double *var);
 static int estpos(const obsd_t *obs, int n, const double *rs, const double *dts,
-  const double *vare, const int *svh, const nav_t *nav, 
-  sol_t *sol, double *azel, int *vsat, double *resp);
-int estpos_iterative(const obsd_t *obs, int n, const double *rs, const double *dts,
   const double *vare, const int *svh, const nav_t *nav, 
   sol_t *sol, double *azel, int *vsat, double *resp);
 
@@ -83,11 +78,6 @@ static int rescode(int iter, const obsd_t *obs, int n, const double *rs,
 	const nav_t *nav, const double *x,
 	double *v, double *H, double *var, double *azel, int *vsat,
 	double *resp, int *ns);
-static int rescode_iterative(int iter, const obsd_t *obs, int n, const double *rs,
-  const double *dts, const double *vare, const int *svh,
-  const nav_t *nav, const double *x,
-  double *v, double *H, double *var, double *azel, int *vsat,
-  double *resp, int *ns);
 
 double satazel(const double *pos, const double *e, double *azel);
 void ecef2enu(const double *pos, const double *r, double *e);
@@ -98,7 +88,7 @@ int lsq(const double *A, const double *y, int n, int m, double *x, double *Q);
 //****************************************************
 //****************************************************
 
-//Initiaize pointers
+//Initialize pointers
 void gps_pos_solve_init(gps_ch_t* channels)
 {
   //Copy pointers
@@ -109,25 +99,6 @@ void gps_pos_solve_init(gps_ch_t* channels)
   nav_data.n = GPS_SAT_CNT;
 }
 
-// Main function, disigned to be iterative
-// User need to call it until solving_is_busy() return 0
-// Expected that any iteration takees less than 1ms
-void gps_pos_solve(obsd_t *obs_p)
-{
-  if (flag_processing_busy)
-  {
-    //Convert result to angular form
-    ecef2pos(gps_sol.rr, final_pos);//radians
-    final_pos[0] = final_pos[0] * R2D;
-    final_pos[1] = final_pos[1] * R2D;
-    flag_processing_busy = 0;
-    //This iteration is short - 100us
-  }
-  else if (pntpos_iterative(obs_p, GPS_SAT_CNT, &nav_data, &gps_sol) > 0)
-  {
-    flag_processing_busy = 1;
-  }
-}
 
 // Main function
 // Execution can take time (> 20ms)
@@ -186,90 +157,6 @@ int pntpos(const obsd_t *obs, int n, const nav_t *nav, sol_t *sol)
   return stat;
 }
 
-//Same as pntpos(), but iterative
-//Return 0 if not completed, 1 if OK, <0 if error
-int pntpos_iterative(const obsd_t *obs, int n, const nav_t *nav, sol_t *sol)
-{
-  static double *rs, *dts, *var, *resp; //malloc pointers
-  static int vsat[4] = { 0 }, svh[4];
-  static uint8_t satposs_busy = 0;
-  static uint8_t estpos_busy = 0;
-  
-  if (flag_solving_busy == 0)
-  {
-    //Init
-    rs = mat(6, n);
-    dts = mat(2, n);
-    var = mat(1, n);
-    resp = mat(1, n);
-    memset(vsat, 0, sizeof(vsat));
-    memset(svh, 0, sizeof(svh));
-    
-    sol->stat = SOLQ_NONE;
-    if (n <= 0) 
-      return -2;
-    sol->time = obs[0].time;
-    
-    flag_solving_busy = 1;
-    satposs_busy = 1;
-    printf("Code1\n");
-  }
-  
-  int res = -1;
-  if (satposs_busy)
-  {
-    /* satellite positons, velocities and clocks */
-    //Take near 600 us
-    res = satposs_iterative(sol->time, obs, n, nav, 0, rs, dts, var, svh);
-    if (res == 0)
-      return 0;//not completed
-    else if (res < 0)
-    {
-      //FAIL
-      satposs_busy = 0;
-    }
-    else
-    {
-      //OK
-      satposs_busy = 0;
-      estpos_busy = 1;
-      printf("Code2\n");
-      return 0;//not completed
-    }
-  }
-  
-  if (estpos_busy)
-  {
-    /* estimate receiver position with pseudorange */
-    //Take near 700 us
-    res = estpos_iterative(obs, n, rs, dts, var, svh, nav, sol, azel, vsat, resp);
-    
-    if ((res < 0) || (res > 0))
-    {
-      estpos_busy = 0;
-      flag_solving_busy = 0;
-      if (res > 0)//Pos. found
-      {
-        printf("Code3\n");
-        // Convert to deg.
-        for (uint8_t i = 0; i < (2 * MAXSAT); i++)
-          azel[i] = azel[i] * R2D;
-      }
-    }
-    else
-    {
-      return 0;//not completed
-    }
-  }
-  
-  flag_solving_busy = 0;
-  free(rs);free(dts);free(var);free(resp);
-  
-  if (res < 0)
-    return -1;
-  
-  return 1;
-}
 
 uint8_t solving_is_busy(void)
 {
@@ -452,146 +339,6 @@ static int estpos(const obsd_t *obs, int n, const double *rs, const double *dts,
   free(v); free(H); free(var);
   
   return 0;
-}
-
-//Same as estpos(), but iterative
-//Return 0 if not completed, 1 if OK, <0 if error
-int estpos_iterative(const obsd_t *obs, int n, const double *rs, const double *dts,
-  const double *vare, const int *svh, const nav_t *nav, 
-  sol_t *sol, double *azel, int *vsat, double *resp)
-{
-  static uint8_t iteration_idx = 0;
-  static double x[NX] = { 0 }, dx[NX], Q[NX*NX], *v, *H, *var, sig;
-  static int ns, nv;
-  int i, j, k, info;
-  int res = 0;
-  
-  static uint8_t operation = 0;
-  
-  i = 0;
-  if ((iteration_idx == 0) && (operation == 0))
-  { 
-    //Init
-    operation = 0;
-    v = mat(n + 4, 1); 
-    H = mat(NX, n + 4); 
-    var = mat(n + 4, 1);
-    memset(x, 0, sizeof(x));
-    
-    for (i = 0; i < 3; i++)
-      x[i] = sol->rr[i];
-  }
-  
-  while (1)
-  {
-    //rescode() take near 1.5ms if ionocorr() and tropcorr() are used
-    //So iterative mode is needed.
-    //rescode() can be used here without ionocorr() and tropcorr() enabled
-    //So only two operations (rescode() and lsq()) will be needed
-    
-    if (operation < (n - 1))//n-1=3
-    {
-      int res2;
-      res2 = rescode_iterative(i, obs, n, rs, dts, vare, svh,
-        nav, x, v, H, var, azel, vsat, resp, &ns);
-      if (res2 >= 0)
-      {
-        //unexpected
-        res = -1;
-        break;
-      }
-      
-      operation++;
-      return 0;//not completed
-    }
-    else if (operation == (n - 1))
-    {
-      nv = rescode_iterative(i, obs, n, rs, dts, vare, svh,
-        nav, x, v, H, var, azel, vsat, resp, &ns);
-      
-      if (nv < NX)
-      {
-        //sprintf(msg, "lack of valid sats ns=%d", nv);
-        res = -1;
-        break;
-      }
-      else
-      {
-        // weight by variance 
-        for (j = 0;j < nv;j++)
-        {
-          sig = sqrt(var[j]);
-          v[j] /= sig;
-          for (k = 0;k < NX;k++) 
-            H[k + j * NX] /= sig;
-        }
-        
-        operation++;
-        return 0;
-      }
-    }
-    else if (operation == n)
-    {
-      // least square estimation 
-      info = lsq(H, v, NX, nv, dx, Q);
-      if (info > 0)
-      {
-        //sprintf(msg, "lsq error info=%d", info);
-        res = -2;
-        break;
-      }
-      
-      for (j = 0;j < NX;j++)
-        x[j] += dx[j];
-      
-      if (sos4(dx) < 1E-8)
-      {
-        res = 1;//position found
-      }
-      else
-      {
-        //need new iteration
-        iteration_idx++;
-        operation = 0;
-        res = 0;
-      }
-    }
-    
-    break;
-  }//end of while
-  
-  if (iteration_idx > MAXITR)
-  {
-    //Too much iterations
-    res = -1;
-  }
-  
-  if (res < 0)
-  {
-    iteration_idx = 0;
-    operation = 0;
-    free(v); free(H); free(var);
-  }
-  
-  if (res > 0)
-  {
-    sol->type = 0;
-    sol->time = timeadd(obs[0].time, -x[3] / CLIGHT);
-    sol->dtr[0] = x[3] / CLIGHT; //receiver clock bias (s) 
-    for (j = 0;j < 6;j++) sol->rr[j] = j < 3 ? x[j] : 0.0;
-    for (j = 0;j < 3;j++) sol->qr[j] = (float)Q[j + j * NX];
-    sol->qr[3] = (float)Q[1];    // cov xy 
-    sol->qr[4] = (float)Q[2 + NX]; // cov yz 
-    sol->qr[5] = (float)Q[2];    // cov zx 
-    sol->ns = (unsigned char)ns;
-    sol->age = sol->ratio = 0.0;
-    sol->stat = SOLQ_SINGLE;
-    
-    iteration_idx = 0;
-    operation = 0;
-    free(v); free(H); free(var);
-  }
-  return res;
 }
 
 
@@ -802,110 +549,6 @@ static int rescode(int iter, const obsd_t *obs, int n, const double *rs,
   return nv;
 }
 
-/* pseudorange residuals -----------------------------------------------------*/
-// Same as rescode() but iterative
-//Return -1 if result is not ready
-static int rescode_iterative(int iter, const obsd_t *obs, int n, const double *rs,
-  const double *dts, const double *vare, const int *svh,
-  const nav_t *nav, const double *x,
-  double *v, double *H, double *var, double *azel, int *vsat,
-  double *resp, int *ns)
-{
-  double r = 0.0;
-  double dtrp = 0;
-  double vmeas = 0;
-  double dion = 0;
-  double vion = 0;
-  double vtrp = 0;
-  
-  static double rr[3], pos[3], e[3], P;
-  static int nv = 0;
-  
-  int i, j  = 0;
-  
-  static int iteration_sat_idx = 0;
-  if (iteration_sat_idx == 0)
-  {
-    for (i = 0; i < 3; i++)
-      rr[i] = x[i];
-    
-    ecef2pos(rr, pos);
-    nv = 0;
-  }
-  
-  i = iteration_sat_idx;
-  
-  //for (i = *ns = 0; i < n && i < MAXSAT; i++)
-  while (1)
-  {
-    vsat[i] = 0; azel[i * 2] = azel[1 + i * 2] = resp[i] = 0.0;
-    
-    /* reject duplicated observation data */
-    if (i < n - 1 && i < MAXSAT - 1 && obs[i].sat == obs[i + 1].sat)
-    {
-      i++;
-      break;
-    }
-    /* geometric distance/azimuth/elevation angle */
-    if ((r = geodist(rs + i * 6, rr, e)) <= 0.0 ||
-        satazel(pos, e, azel + i * 2) < 0.0) 
-      break; //<<<<<<<<<<<<<<<<
-    
-    /* psudorange with code bias correction */
-    P = obs[i].P[0];
-    double tgd = gettgd(obs[i].sat, nav);
-    P -= tgd;
-    
-    /* excluded satellite? */
-    if (svh[i]) //unhealsy
-      break;
-    
-    /* ionospheric corrections */
-    ionocorr(obs[i].time, nav, obs[i].sat, pos, azel + i * 2, &dion, &vion);
-    
-    /* tropospheric corrections */
-    tropcorr(obs[i].time, nav, pos, azel + i * 2, &dtrp, &vtrp);
-    
-    /* pseudorange residual */
-    double corr = (r + dion + dtrp + x[3] - CLIGHT * dts[i * 2]);
-    v[nv] = P - corr;
-    
-    /* design matrix */
-    for (j = 0;j < NX;j++)
-    {
-      H[j + nv * NX] = j < 3 ? -e[j] : (j == 3 ? 1.0 : 0.0);
-    }
-
-      /* time system and receiver bias offset correction */
-      vsat[i] = 1; resp[i] = v[nv]; (*ns)++;
-      
-      /* error variance */
-      var[nv++] = varerr(azel[1 + i * 2]) + vare[i] + vmeas + vion + vtrp;
-      break;
-  }
-  iteration_sat_idx++;
-  
-  if (iteration_sat_idx == n)
-  {
-    iteration_sat_idx = 0;
-    /* constraint to avoid rank-deficient */
-    for (i = 1; i < 4; i++)
-    {
-      v[nv] = 0.0;
-      for (j = 0;j < NX;j++)
-      {  
-        H[j + nv * NX] = j == i + 3 ? 1.0 : 0.0; //<<<<
-      }
-      var[nv++] = 0.01;
-    }
-    return nv;
-  }
-  else
-  {
-    return -1;//not completed
-  }
-}
-
 
 /* satellite positions and clocks ----------------------------------------------
 * compute satellite positions, velocities and clocks
@@ -973,83 +616,6 @@ int  satposs(gtime_t teph, const obsd_t *obs, int n, const nav_t *nav,
   }
   
   return 1;
-}
-
-//Same as satposs(), but iterative
-int satposs_iterative(gtime_t teph, const obsd_t *obs, int n, const nav_t *nav,
-  int ephopt, double *rs, double *dts, double *var, int *svh)
-{
-  //Index of satellite
-  static uint8_t iteration_sat_idx = 0;
-  
-  static gtime_t time[4] = { {0} };
-  double dt, pr;
-  int j;
-  static uint8_t sat_ok_cnt = 0;
-  
-  if (iteration_sat_idx == 0)
-  {
-    memset(time, 0, sizeof(time));
-    sat_ok_cnt = 0;
-  }
-  
-  //for (i = 0; i < n&&i < MAXSAT; i++)
-  int i = iteration_sat_idx;
-  while (1)
-  {
-    for (j = 0;j < 6;j++) 
-      rs[j + i * 6] = 0.0;
-    for (j = 0;j < 2;j++) dts[j + i * 2] = 0.0;
-    var[i] = 0.0; svh[i] = 0;
-    
-    /* search any psuedorange */
-    j = 0;
-    pr = obs[i].P[j];
-    
-    /* transmission time by satellite clock */
-    time[i] = timeadd(obs[i].time, -pr / CLIGHT);
-    
-    /* satellite clock bias by broadcast ephemeris */
-    if (!ephclk(time[i], teph, obs[i].sat, nav, &dt)) {
-      //trace(2, "no broadcast clock %s sat=%2d\n", time_str(time[i], 3), obs[i].sat);
-      break;
-    }
-    time[i] = timeadd(time[i], -dt);
-    
-    /* satellite position and clock at transmission time */
-    if (!satpos(time[i], teph, obs[i].sat, ephopt, nav, rs + i * 6, dts + i * 2, var + i,
-                svh + i)) 
-    {
-      //trace(2, "no ephemeris %s sat=%2d\n", time_str(time[i], 3), obs[i].sat);
-      break;
-    }
-    sat_ok_cnt++;
-    /* if no precise clock available, use broadcast clock instead */
-    if (dts[i * 2] == 0.0)
-    {
-      if (!ephclk(time[i], teph, obs[i].sat, nav, dts + i * 2)) 
-        break;
-      dts[1 + i * 2] = 0.0;
-      *var = SQR(STD_BRDCCLK);
-    }
-    break;
-  }
-  
-  //end of calculations
-  iteration_sat_idx++;
-  
-  if ((iteration_sat_idx == n) || (iteration_sat_idx > MAXSAT))
-  {
-    //end of iterations
-    iteration_sat_idx = 0;
-    
-    if (sat_ok_cnt != n)
-      return -1;
-    
-    return 1;
-  }
-  else
-    return 0;//not completed
 }
 
 
