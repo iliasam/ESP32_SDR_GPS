@@ -92,6 +92,12 @@ typedef struct
   uint16_t      code_filt_cnt; //Number of of intergated point
   float	        code_phase_fine_filt;//Filter result - 1 step is (0.5chip / 8)
 #endif
+
+#if (ENABLE_IQ_PLOT)
+  int16_t     plot_i[IQ_PLOT_POINTS_CNT];//I points
+  int16_t     plot_q[IQ_PLOT_POINTS_CNT];//I points
+  uint16_t    plot_cnt;//circular counter, 0..IQ_PLOT_POINTS_CNT-1
+#endif
   
   gps_tracking_state_t	state;
 } gps_tracking_t; //Tracking information type

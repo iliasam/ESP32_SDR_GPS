@@ -67,6 +67,9 @@ void ui_ScreenIQ_screen_init(void);
 void ui_event_ScreenIQ(lv_event_t * e);
 extern lv_obj_t * ui_ScreenIQ;
 extern lv_obj_t * ui_Label3;
+void ui_event_Roller1(lv_event_t * e);
+extern lv_obj_t * ui_Roller1;
+extern lv_obj_t * ui_Chart1;
 // SCREEN: ui_ScreenPosition
 void ui_ScreenPosition_screen_init(void);
 void ui_event_ScreenPosition(lv_event_t * e);

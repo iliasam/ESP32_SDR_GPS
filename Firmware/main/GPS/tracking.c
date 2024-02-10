@@ -143,6 +143,19 @@ void gps_tracking_data_process(gps_ch_t* channel, uint8_t* data, uint8_t index)
   
   // Extracting nav. data here
   gps_nav_data_analyse_new_code(channel, index, IP);
+
+#if (ENABLE_IQ_PLOT)
+  //Save I/Q point
+  uint16_t tmp_cnt = channel->tracking_data.plot_cnt;
+  int32_t tmp_i = IP * IQ_PLOT_MAX / IQ_PLOT_SIGNAL_MAX;
+  int32_t tmp_q = QP * IQ_PLOT_MAX / IQ_PLOT_SIGNAL_MAX;
+
+  channel->tracking_data.plot_i[tmp_cnt] = tmp_i;
+  channel->tracking_data.plot_q[tmp_cnt] = tmp_q;
+  channel->tracking_data.plot_cnt++;
+  if (channel->tracking_data.plot_cnt >= IQ_PLOT_POINTS_CNT)
+    channel->tracking_data.plot_cnt = 0;
+#endif
   
   //Integrating values for SNR calculation
   channel->tracking_data.i_part_summ += abs(IP);

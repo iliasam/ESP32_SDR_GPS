@@ -18,6 +18,34 @@ void ui_ScreenIQ_screen_init(void)
     lv_obj_set_align(ui_Label3, LV_ALIGN_CENTER);
     lv_label_set_text(ui_Label3, "IQ plot");
 
+    ui_Roller1 = lv_roller_create(ui_ScreenIQ);
+    lv_roller_set_options(ui_Roller1, "SAT1\nSAT2\nSAT3\nSAT4", LV_ROLLER_MODE_NORMAL);
+    lv_obj_set_width(ui_Roller1, 52);
+    lv_obj_set_height(ui_Roller1, 216);
+    lv_obj_set_x(ui_Roller1, 123);
+    lv_obj_set_y(ui_Roller1, 0);
+    lv_obj_set_align(ui_Roller1, LV_ALIGN_CENTER);
+
+    ui_Chart1 = lv_chart_create(ui_ScreenIQ);
+    lv_obj_set_width(ui_Chart1, 199);
+    lv_obj_set_height(ui_Chart1, 183);
+    lv_obj_set_x(ui_Chart1, -20);
+    lv_obj_set_y(ui_Chart1, 2);
+    lv_obj_set_align(ui_Chart1, LV_ALIGN_CENTER);
+    lv_chart_set_type(ui_Chart1, LV_CHART_TYPE_SCATTER);
+    lv_chart_set_point_count(ui_Chart1, 50);
+    lv_chart_set_range(ui_Chart1, LV_CHART_AXIS_SECONDARY_Y, 0, 0);
+    lv_chart_set_axis_tick(ui_Chart1, LV_CHART_AXIS_PRIMARY_X, 8, 5, 5, 2, true, 10);
+    lv_chart_set_axis_tick(ui_Chart1, LV_CHART_AXIS_PRIMARY_Y, 10, 5, 5, 2, true, 50);
+    lv_chart_set_axis_tick(ui_Chart1, LV_CHART_AXIS_SECONDARY_Y, 0, 0, 0, 0, false, 25);
+    //lv_chart_series_t * ui_Chart1_series_1 = lv_chart_add_series(ui_Chart1, lv_color_hex(0x1244DE),
+    //                                                             LV_CHART_AXIS_PRIMARY_Y);
+    //static lv_coord_t ui_Chart1_series_1_array[] = { 0 };
+    //lv_chart_set_ext_y_array(ui_Chart1, ui_Chart1_series_1, ui_Chart1_series_1_array);
+
+
+
+    lv_obj_add_event_cb(ui_Roller1, ui_event_Roller1, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_ScreenIQ, ui_event_ScreenIQ, LV_EVENT_ALL, NULL);
 
 }

@@ -57,3 +57,8 @@ void btnCodeSearchClick(lv_event_t * e)
 	lv_indev_wait_release(lv_indev_get_act());
   	_ui_screen_change(&ui_ScreenState, LV_SCR_LOAD_ANIM_MOVE_LEFT, 0, 0, &ui_ScreenState_screen_init);
 }
+
+void func_IQSatChanged(lv_event_t * e)
+{
+	// Your code here
+}

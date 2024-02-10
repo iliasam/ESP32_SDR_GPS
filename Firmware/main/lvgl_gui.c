@@ -45,6 +45,10 @@ gps_gui_ch_t gps_channels_gui[GPS_SAT_CNT];
 /// @brief Set be fast task at core 0, cleared by slow gui_task at core 1.
 uint8_t gui_state_have_data_copied = 0;
 
+extern gps_ch_t gps_channels[GPS_SAT_CNT];
+
+lv_chart_series_t *lvgl_iq_series;
+
 #if (ENABLE_CALC_POSITION)
   sol_t gui_gps_sol = {0};
   double gui_final_pos[3];
@@ -60,8 +64,11 @@ void change_keyboard1(void);
 void startup_actions(void);
 void create_state_table(void);
 void lvgl_gui_display_init(void);
+void prepare_iq_plot(void);
 
 void lvgl_redraw_state_screen(void);
+void lvgl_redraw_iq_screen(void);
+
 void lvgl_generate_state_table_line(uint8_t sat_idx, char *line_txt);
 uint16_t print_state_acquisition_channel(
     gps_gui_ch_t *channel, char *line_txt, uint16_t max_len);
@@ -103,7 +110,7 @@ void gui_task(void *pvParameter)
     vTaskDelete(NULL);
 }
 
-//Used for LVGL update
+//Used for LVGL
 static void lv_tick_task_cb(void *arg) 
 {
     (void) arg;
@@ -116,6 +123,8 @@ static void user_gui_update_cb(lv_timer_t * timer)
 
     if (activeScreen == ui_ScreenState)
         lvgl_redraw_state_screen();
+    else if (activeScreen == ui_ScreenIQ)
+        lvgl_redraw_iq_screen();
 
 }
 
@@ -207,6 +216,7 @@ void startup_actions(void)
 
     create_state_table();
     change_keyboard1();
+    prepare_iq_plot();
 }
 
 void create_state_table(void)
@@ -228,6 +238,20 @@ void create_state_table(void)
     lv_table_set_col_width(table_state, 0, 300);
     _ui_flag_modify(table_state, LV_OBJ_FLAG_SCROLLABLE, _UI_MODIFY_FLAG_REMOVE);
     _ui_flag_modify(table_state, LV_OBJ_FLAG_CLICKABLE, _UI_MODIFY_FLAG_REMOVE);
+}
+
+
+void prepare_iq_plot(void)
+{
+#if (ENABLE_IQ_PLOT)
+    lv_chart_set_point_count(ui_Chart1, IQ_PLOT_POINTS_CNT);
+    lv_chart_set_range(ui_Chart1, LV_CHART_AXIS_PRIMARY_X, -IQ_PLOT_MAX, IQ_PLOT_MAX);
+    lv_chart_set_range(ui_Chart1, LV_CHART_AXIS_PRIMARY_Y, -IQ_PLOT_MAX, IQ_PLOT_MAX);
+    lv_obj_set_style_line_width(ui_Chart1, 0, LV_PART_ITEMS);//hide lines
+
+    lvgl_iq_series = lv_chart_add_series(ui_Chart1, lv_color_hex(0x1244DE),
+        LV_CHART_AXIS_PRIMARY_Y);
+#endif
 }
 
 //####################################################
@@ -331,6 +355,12 @@ void lvgl_redraw_state_screen(void)
 #endif
 
     lv_label_set_text(ui_lblStateCommon, tmp_txt);
+}
+
+void lvgl_redraw_iq_screen(void)
+{
+    lv_chart_set_ext_x_array(ui_Chart1, lvgl_iq_series, gps_channels[0].tracking_data.plot_i);
+    lv_chart_set_ext_y_array(ui_Chart1, lvgl_iq_series, gps_channels[0].tracking_data.plot_q);
 }
 
 void lvgl_generate_state_table_line(uint8_t sat_idx, char *line_txt)

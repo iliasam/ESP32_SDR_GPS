@@ -37,6 +37,12 @@
 //Number of measurements, speed is 25 measurements in one channel per 100ms
 #define CODE_FILTER_LENGTH      100
 
+//Draw IQ plot
+#define ENABLE_IQ_PLOT          1
+#define IQ_PLOT_POINTS_CNT      50
+#define IQ_PLOT_MAX             100 //Axis Max
+#define IQ_PLOT_SIGNAL_MAX      1000
+
 #define ACQ_SEARCH_FREQ_HZ      (7000) //Search zone is x2
 #define ACQ_SEARCH_STEP_HZ      (500)
 /// Number of freq steps
