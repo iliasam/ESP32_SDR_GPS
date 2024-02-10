@@ -1,6 +1,7 @@
 #ifndef _GUI_H
 #define _GUI_H
 
+#include <time.h>
 #include "gps_misc.h"
 
 /// @brief Used too store data from GPS channels for displaying
@@ -16,6 +17,9 @@ typedef struct
     uint16_t                nav_word_cnt;
     uint8_t                 nav_pol_found;
     uint16_t                nav_subframe_cnt;
+    time_t                  eph_time;
+
+
     uint8_t	                prn; //Sat PRN code
 } gps_gui_ch_t;
 

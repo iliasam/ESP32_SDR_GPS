@@ -30,7 +30,7 @@
 #define ENABLE_RTCM_SEND        0
 
 //Calculate receiver position by observations
-#define ENABLE_CALC_POSITION    0
+#define ENABLE_CALC_POSITION    1
 
 // Accurate code phase averaging
 #define ENABLE_CODE_FILTER      1

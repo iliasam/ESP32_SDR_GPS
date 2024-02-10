@@ -25,6 +25,10 @@
 #include "lvgl_helpers.h"
 #include "touch_driver.h"
 
+#if (ENABLE_CALC_POSITION)
+  #include "solving.h"
+#endif
+
 #include "ui.h"
 
 #define LV_TICK_PERIOD_MS 1
@@ -41,6 +45,11 @@ static lv_color_t* disp_buf2;
 
 lv_obj_t *table_state;
 gps_gui_ch_t gps_channels_gui[GPS_SAT_CNT];
+
+#if (ENABLE_CALC_POSITION)
+  extern sol_t gps_sol;
+  extern double final_pos[3];//geodetic position {lat,lon,h} (deg,m)
+#endif
 
 //*************************************************************
 
@@ -251,22 +260,50 @@ void lvgl_store_gps_state(gps_ch_t *channels)
 
         gps_channels_gui[i].nav_pol_found = channels[i].nav_data.polarity_found;
         gps_channels_gui[i].nav_subframe_cnt = channels[i].eph_data.sub_cnt;
+        gps_channels_gui[i].eph_time = channels[i].eph_data.eph.ttr.time;
     }
 }
 
 void lvgl_redraw_state_screen(void)
 {
     char tmp_txt[USER_GUI_MAX_LINE_LENGTH];
+    char *write_prt = tmp_txt;
 
-    float time = (float)signal_capture_get_packet_cnt() / 1000.0f;
-    sprintf(tmp_txt, "SYS RUNTIME: %.1f s", time);
-    lv_label_set_text(ui_lblStateCommon, tmp_txt);
-
+    time_t tmp_time = 0;
     for (uint8_t i = 0; i < GPS_SAT_CNT; i++)
     {
         lvgl_generate_state_table_line(i, tmp_txt);
         lv_table_set_cell_value(table_state, i, 0, tmp_txt);
+
+        if (gps_channels_gui[i].eph_time > 0)
+            tmp_time = gps_channels_gui[i].eph_time;
     }
+
+    //Time label
+    memset(tmp_txt, 0, USER_GUI_MAX_LINE_LENGTH);
+    float time = (float)signal_capture_get_packet_cnt() / 1000.0f;
+    sprintf(tmp_txt, "SYS RUNTIME: %.1f s", time);
+    lv_label_set_text(ui_lblSysTime1, tmp_txt);
+
+    //Info label
+    memset(tmp_txt, 0, USER_GUI_MAX_LINE_LENGTH);
+    write_prt = tmp_txt;
+    if (tmp_time > 0)
+    {
+        tmp_time = tmp_time - GPS_UTC_TIME_OFFSET_S;
+        write_prt += sprintf(write_prt, "EPH UTC TIME: %s", ctime(&tmp_time));
+    }
+
+#if (ENABLE_CALC_POSITION)
+  if (gps_sol.stat != SOLQ_NONE)
+  {
+    tmp_time = gps_sol.time.time - GPS_UTC_TIME_OFFSET_S;
+    write_prt += sprintf(write_prt, "UTC TIME: %s", ctime(&tmp_time));
+    write_prt += sprintf(write_prt, LV_SYMBOL_GPS "POS: %2.5f %2.5f", final_pos[0], final_pos[1]);
+  }
+#endif
+
+    lv_label_set_text(ui_lblStateCommon, tmp_txt);
 }
 
 void lvgl_generate_state_table_line(uint8_t sat_idx, char *line_txt)

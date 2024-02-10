@@ -139,7 +139,7 @@ void gps_master_handling(gps_ch_t* channels, uint8_t index)
 }
 
 
-//Called every 17ms, when the is no tracking working
+//Called every 17ms, when there is no tracking working
 void gps_master_nav_handling(gps_ch_t* channels)
 {
   //Set first subframe detection time for all channels
@@ -258,7 +258,8 @@ void gps_master_nav_handling(gps_ch_t* channels)
   }
 
   #if (ENABLE_RTCM_SEND)
-    gps_master_transmit_obs(channels);
+    //gps_master_transmit_obs(channels);
+    #error "NOT IMPLEMENTED FOR THIS MCU!"
   #endif
   
   #if (ENABLE_CALC_POSITION)
@@ -400,36 +401,6 @@ void gps_master_calculate_pos(gps_ch_t* channels)
   }
 }
 #endif
-
-
-
-#if (ENABLE_RTCM_SEND)
-void gps_master_transmit_obs(gps_ch_t* channels)
-{
-  static uint32_t prev_obs_send_time_ms = 0;
-  
-  if (uart_prim_is_busy())
-    return;
-  
-  sdrobs2obsd(channels, GPS_SAT_CNT, obsd);
-  for (uint8_t i = 0; i < GPS_SAT_CNT; i++)
-  {
-    if (channels[i].eph_data.received_mask & 0x7 == 0x7) //subrame 1,2,3
-    {
-      channels[i].eph_data.received_mask &= ~0x7;//clear mask
-      sendrtcmnav(&channels[i]);
-      return;//wait for UART TX
-    }
-  }
-  
-  uint32_t curr_time_ms = signal_capture_get_packet_cnt();
-  if ((curr_time_ms - prev_obs_send_time_ms) > GPS_RTCM_SEND_PERIOD_MS)
-  {
-    prev_obs_send_time_ms = curr_time_ms;
-    sendrtcmobs(obsd, GPS_SAT_CNT);
-  }
-}
-#endif //#if (ENABLE_RTCM_SEND)
 
 uint8_t gps_master_need_freq_search(gps_ch_t* channels)
 {
