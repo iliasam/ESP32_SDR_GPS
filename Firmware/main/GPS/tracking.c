@@ -470,7 +470,7 @@ void gps_pre_tracking_process_data(gps_ch_t* channel, uint8_t points_cnt)
     uint16_t diff = channel->tracking_data.pre_track_phases[i] - 
       channel->tracking_data.pre_track_phases[i - 1];
     
-    if (abs(diff) < 1)
+    if (diff == 0)
       chain_items++; //count same code phase values
     else
     {

@@ -203,7 +203,7 @@ void acquisition_code_phase_search(gps_ch_t* channel, uint8_t* data)
   uint16_t avr_val;
   uint16_t best_code_phase = 0;
   
-  uint16_t res_val = correlation_search(
+  correlation_search(
     tmp_prn_data, tmp_data_i, tmp_data_q, 
     channel->acq_data.code_search_start, channel->acq_data.code_search_stop, 
     &avr_val, &best_code_phase);
@@ -290,7 +290,7 @@ void acquisition_freq_search(gps_ch_t* channel, uint8_t* data)
   uint16_t avr_val;
   uint16_t best_phase = 0;
   //Check ALL code phases, but for one frequency
-  uint16_t res_val = correlation_search(
+  correlation_search(
     tmp_prn_data, tmp_data_i, tmp_data_q, 0, (PRN_LENGTH * 2), &avr_val, &best_phase);
   
   acq_single_freq_phases[acq_single_freq_count] = best_phase;
@@ -332,7 +332,7 @@ void acquisition_process_single_freq_data(gps_ch_t* channel, uint8_t points_cnt)
   {
     //Difference between to sequential items
     uint16_t diff = acq_single_freq_phases[i] - acq_single_freq_phases[i - 1];
-    if (abs(diff) < 3)
+    if (abs(diff) < 3) //TODO
       same_flag = 1;//Code phase values are close to each other
     
     if (diff < 15)

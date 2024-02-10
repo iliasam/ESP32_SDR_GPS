@@ -412,7 +412,7 @@ void gps_master_calculate_pos_handling(gps_ch_t* channels)
 /// @param  
 void gps_master_run_solving(void)
 {
-  static uint32_t prev_time = 0;
+  //static uint32_t prev_time = 0;
 
   if (gps_common_need_solve == 0) //No request to solve
     return;

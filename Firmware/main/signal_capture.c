@@ -183,7 +183,7 @@ void signal_capture_init(void)
     t.tx_buffer = NULL;
     t.rx_buffer = &spi_rx_buffer0;
     t.rx_buffer2 = &spi_rx_buffer1;
-    esp_err_t ret = c_spi_slave_start_transmit(GPS_SPI_NAME, &t, portMAX_DELAY);
+    c_spi_slave_start_transmit(GPS_SPI_NAME, &t, portMAX_DELAY);
 }
 
 //Callback called after the SPI registers are loaded with new data.

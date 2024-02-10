@@ -332,7 +332,7 @@ void gps_nav_data_words_detection(gps_ch_t* channel, uint8_t new_bit)
         //Full subframe collected
         if (channel->nav_data.word_cnt == GPS_WORDS_IN_SUBFRAME)
         {
-          uint8_t subframe_id = gps_nav_data_decode_subframe(channel);
+          gps_nav_data_decode_subframe(channel);
           gps_nav_data_update_subframe_time(channel);
           channel->nav_data.word_cnt = 0;
           channel->nav_data.new_subframe_flag = 1;
