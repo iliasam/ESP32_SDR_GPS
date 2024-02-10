@@ -12,12 +12,16 @@
 #include "rtk_common.h"
 #include "math.h"
 #include "time.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 #include "lvgl_gui.h"
 
 
 #if (ENABLE_CALC_POSITION)
   #include "solving.h"
+  extern sol_t gps_sol;
+  extern double final_pos[3];//geodetic position {lat,lon,h} (deg,m)
 #endif
 
 
@@ -27,7 +31,8 @@
 #define SUBFRAME_DURATION_MS	(6000)
 
 #define GPS_RTCM_SEND_PERIOD_MS 200
-#define GPS_CALC_POS_PERIOD_MS  500
+
+#define GPS_CALC_POS_PERIOD_MS  200 //Code filter can make calculations slower
 
 
 //******************************************************************
@@ -258,15 +263,15 @@ void gps_master_nav_handling(gps_ch_t* channels)
 #if (ENABLE_CODE_FILTER)
     gps_master_code_phase_filter_reset(channels, curr_tick_time);
 #endif
+
+#if (ENABLE_CALC_POSITION)
+    gps_master_calculate_pos_handling(channels);
+#endif
   }
 
   #if (ENABLE_RTCM_SEND)
     //gps_master_transmit_obs(channels);
     #error "NOT IMPLEMENTED FOR THIS MCU!"
-  #endif
-  
-  #if (ENABLE_CALC_POSITION)
-  gps_master_calculate_pos_handling(channels);
   #endif
 }
 
@@ -385,8 +390,6 @@ void gps_master_calculate_pos_handling(gps_ch_t* channels)
   uint32_t curr_time_ms = signal_capture_get_packet_cnt();
   if ((curr_time_ms - prev_calc_time_ms) > GPS_CALC_POS_PERIOD_MS)
   {
-    prev_calc_time_ms = curr_time_ms;
-    
     //Check that all sats have received ephemeris
     uint8_t  eph_ok_cnt = 0;
     for (uint8_t i = 0; i < GPS_SAT_CNT; i++)
@@ -395,11 +398,12 @@ void gps_master_calculate_pos_handling(gps_ch_t* channels)
         eph_ok_cnt++;
     }
     
-    //Copy data and set a flag for less priority task
-    sdrobs2obsd(channels, GPS_SAT_CNT, obsd);
     if (eph_ok_cnt == GPS_SAT_CNT)
     {
+      //Copy data and set a flag for less priority task
+      sdrobs2obsd(channels, GPS_SAT_CNT, obsd);
       gps_common_need_solve = 1;
+      prev_calc_time_ms = curr_time_ms;
     }
   }
 }
@@ -408,14 +412,23 @@ void gps_master_calculate_pos_handling(gps_ch_t* channels)
 /// @param  
 void gps_master_run_solving(void)
 {
-  if (gps_common_need_solve == 0)
+  static uint32_t prev_time = 0;
+
+  if (gps_common_need_solve == 0) //No request to solve
     return;
 
-  //printf("New pos search\n");
+  //uint32_t start = signal_capture_get_packet_cnt();
+
+  // Take 20-40ms at ESP32 at 240MHz (notice that this is low priority task!)
   gps_pos_solve_direct(obsd);
+
+  //uint32_t diff_ms = signal_capture_get_packet_cnt() - start;
+
   gps_common_need_solve = 0;
+
+  lvgl_store_new_position(&gps_sol, &final_pos[0]);
 }
-#endif
+#endif //ENABLE_CALC_POSITION
 
 uint8_t gps_master_need_freq_search(gps_ch_t* channels)
 {

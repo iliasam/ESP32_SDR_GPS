@@ -25,10 +25,6 @@
 #include "lvgl_helpers.h"
 #include "touch_driver.h"
 
-#if (ENABLE_CALC_POSITION)
-  #include "solving.h"
-#endif
-
 #include "ui.h"
 
 #define LV_TICK_PERIOD_MS 1
@@ -46,9 +42,12 @@ static lv_color_t* disp_buf2;
 lv_obj_t *table_state;
 gps_gui_ch_t gps_channels_gui[GPS_SAT_CNT];
 
+/// @brief Set be fast task at core 0, cleared by slow gui_task at core 1.
+uint8_t gui_state_have_data_copied = 0;
+
 #if (ENABLE_CALC_POSITION)
-  extern sol_t gps_sol;
-  extern double final_pos[3];//geodetic position {lat,lon,h} (deg,m)
+  sol_t gui_gps_sol = {0};
+  double gui_final_pos[3];
 #endif
 
 //*************************************************************
@@ -238,6 +237,9 @@ void create_state_table(void)
 /// @param channels 
 void lvgl_store_gps_state(gps_ch_t *channels)
 {
+    if (gui_state_have_data_copied) //Previoous data is not processed
+        return;
+
     for (uint8_t i = 0; i < GPS_SAT_CNT; i++)
     {
         gps_channels_gui[i].prn = channels[i].prn;
@@ -262,19 +264,44 @@ void lvgl_store_gps_state(gps_ch_t *channels)
         gps_channels_gui[i].nav_subframe_cnt = channels[i].eph_data.sub_cnt;
         gps_channels_gui[i].eph_time = channels[i].eph_data.eph.ttr.time;
     }
+
+    gui_state_have_data_copied = 1;
 }
 
+#if (ENABLE_CALC_POSITION)
+/// @brief Save new position for later processing
+/// Need to be called from GPS master
+/// @param gps_sol_p - solution
+/// @param position - 3 elements, geodetic position {lat,lon,h} (deg,m)
+void lvgl_store_new_position(sol_t *gps_sol_p, double *position)
+{
+    if (gps_sol_p->stat != SOLQ_NONE) //Copy only good values
+    {
+        memcpy(&gui_gps_sol, gps_sol_p, sizeof(sol_t));
+        memcpy(gui_final_pos, position, sizeof(gui_final_pos));
+    }
+}
+#endif
+
+//Called periodically from user_gui_update_cb <= TIMER <= lv_timer_handler() in gui_task()
 void lvgl_redraw_state_screen(void)
 {
     char tmp_txt[USER_GUI_MAX_LINE_LENGTH];
     char *write_prt = tmp_txt;
 
+    if (gui_state_have_data_copied)
+    {
+        for (uint8_t i = 0; i < GPS_SAT_CNT; i++)
+        {
+            lvgl_generate_state_table_line(i, tmp_txt);
+            lv_table_set_cell_value(table_state, i, 0, tmp_txt);
+        }
+        gui_state_have_data_copied = 0;
+    }
+
     time_t tmp_time = 0;
     for (uint8_t i = 0; i < GPS_SAT_CNT; i++)
     {
-        lvgl_generate_state_table_line(i, tmp_txt);
-        lv_table_set_cell_value(table_state, i, 0, tmp_txt);
-
         if (gps_channels_gui[i].eph_time > 0)
             tmp_time = gps_channels_gui[i].eph_time;
     }
@@ -295,11 +322,11 @@ void lvgl_redraw_state_screen(void)
     }
 
 #if (ENABLE_CALC_POSITION)
-  if (gps_sol.stat != SOLQ_NONE)
+  if (gui_gps_sol.stat != SOLQ_NONE)
   {
-    tmp_time = gps_sol.time.time - GPS_UTC_TIME_OFFSET_S;
+    tmp_time = gui_gps_sol.time.time - GPS_UTC_TIME_OFFSET_S;
     write_prt += sprintf(write_prt, "UTC TIME: %s", ctime(&tmp_time));
-    write_prt += sprintf(write_prt, LV_SYMBOL_GPS "POS: %2.5f %2.5f", final_pos[0], final_pos[1]);
+    write_prt += sprintf(write_prt, LV_SYMBOL_GPS "POS: %2.5f %2.5f", gui_final_pos[0], gui_final_pos[1]);
   }
 #endif
 
@@ -360,7 +387,7 @@ uint16_t print_state_tracking_channel(
     len -= char_cnt;
 
     uint16_t code = (uint16_t)channel->track_code_phase_fine / 16;
-    char_cnt = snprintf(line_txt, len, "SNR=%2.0fdB Freq=%5d Hz \n Code=%4d chips | wrd=%3d ", 
+    char_cnt = snprintf(line_txt, len, "SNR=%2.0fdB Freq=%5d Hz \nCode=%4d chips | wrd=%3d ", 
         channel->track_snr,
         channel->track_if_freq_offset_hz,
         code, 

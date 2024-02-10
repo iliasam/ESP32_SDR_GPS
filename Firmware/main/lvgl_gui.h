@@ -4,7 +4,11 @@
 #include <time.h>
 #include "gps_misc.h"
 
-/// @brief Used too store data from GPS channels for displaying
+#if (ENABLE_CALC_POSITION)
+  #include "solving.h"
+#endif
+
+/// @brief Used to store data from GPS channels for displaying
 typedef struct
 {
     gps_acq_state_t         acq_state;
@@ -26,6 +30,8 @@ typedef struct
 
 
 void gui_task(void *pvParameter);
+
 void lvgl_store_gps_state(gps_ch_t *channels);
+void lvgl_store_new_position(sol_t *gps_sol_p, double *position);
 
 #endif
