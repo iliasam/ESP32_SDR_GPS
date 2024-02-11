@@ -44,6 +44,7 @@ uint8_t gps_common_need_acq = 1;
 /// Need position solving
 uint8_t gps_common_need_solve = 0;
 
+uint8_t gps_run_enabled = 0;
 uint8_t gps_start_flag = 1;
 uint8_t gps_master_need_acq_reset_flag = 0;
 
@@ -67,6 +68,9 @@ void gps_master_code_phase_filter_reset(
 
 void gps_master_handling(gps_ch_t* channels, uint8_t index)
 {
+  if (gps_run_enabled == 0)
+    return;
+
   if (gps_start_flag)
   {
     gps_start_flag = 0;
@@ -500,6 +504,13 @@ void gps_master_reset_to_aqc_start(gps_ch_t* channels)
     memset(&channels[i].tracking_data, 0, sizeof(gps_tracking_t));
     memset(&channels[i].nav_data, 0, sizeof(gps_nav_data_t)); 
   }
+}
+
+// Called by user
+void gps_master_start_receiver(void)
+{
+  gps_run_enabled = 1;
+  gps_start_flag = 1;
 }
 
 
