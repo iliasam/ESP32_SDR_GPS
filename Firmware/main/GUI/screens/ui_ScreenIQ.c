@@ -43,9 +43,6 @@ void ui_ScreenIQ_screen_init(void)
     //static lv_coord_t ui_Chart1_series_1_array[] = { 0 };
     //lv_chart_set_ext_y_array(ui_Chart1, ui_Chart1_series_1, ui_Chart1_series_1_array);
 
-
-
-    lv_obj_add_event_cb(ui_Roller1, ui_event_Roller1, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_ScreenIQ, ui_event_ScreenIQ, LV_EVENT_ALL, NULL);
 
 }

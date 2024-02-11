@@ -27,6 +27,7 @@
     "signal_capture.h": "c",
     "future": "c",
     "system_error": "c",
-    "regex": "c"
+    "regex": "c",
+    "esp_log.h": "c"
   }
 }

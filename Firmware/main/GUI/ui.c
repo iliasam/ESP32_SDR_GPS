@@ -66,7 +66,6 @@ void ui_ScreenIQ_screen_init(void);
 void ui_event_ScreenIQ(lv_event_t * e);
 lv_obj_t * ui_ScreenIQ;
 lv_obj_t * ui_Label3;
-void ui_event_Roller1(lv_event_t * e);
 lv_obj_t * ui_Roller1;
 lv_obj_t * ui_Chart1;
 
@@ -76,6 +75,7 @@ void ui_ScreenPosition_screen_init(void);
 void ui_event_ScreenPosition(lv_event_t * e);
 lv_obj_t * ui_ScreenPosition;
 lv_obj_t * ui_Label4;
+lv_obj_t * ui_ChartPos;
 lv_obj_t * ui____initial_actions0;
 
 ///////////////////// TEST LVGL SETTINGS ////////////////////
@@ -226,14 +226,6 @@ void ui_event_ScreenIQ(lv_event_t * e)
     if(event_code == LV_EVENT_GESTURE &&  lv_indev_get_gesture_dir(lv_indev_get_act()) == LV_DIR_RIGHT) {
         lv_indev_wait_release(lv_indev_get_act());
         _ui_screen_change(&ui_ScreenState, LV_SCR_LOAD_ANIM_MOVE_LEFT, 0, 0, &ui_ScreenState_screen_init);
-    }
-}
-void ui_event_Roller1(lv_event_t * e)
-{
-    lv_event_code_t event_code = lv_event_get_code(e);
-    lv_obj_t * target = lv_event_get_target(e);
-    if(event_code == LV_EVENT_VALUE_CHANGED) {
-        func_IQSatChanged(e);
     }
 }
 void ui_event_ScreenPosition(lv_event_t * e)

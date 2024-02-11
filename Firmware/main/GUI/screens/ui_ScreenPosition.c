@@ -18,6 +18,24 @@ void ui_ScreenPosition_screen_init(void)
     lv_obj_set_align(ui_Label4, LV_ALIGN_CENTER);
     lv_label_set_text(ui_Label4, "Position");
 
+    ui_ChartPos = lv_chart_create(ui_ScreenPosition);
+    lv_obj_set_width(ui_ChartPos, 264);
+    lv_obj_set_height(ui_ChartPos, 185);
+    lv_obj_set_x(ui_ChartPos, 42);
+    lv_obj_set_y(ui_ChartPos, 27);
+    lv_chart_set_type(ui_ChartPos, LV_CHART_TYPE_SCATTER);
+    lv_chart_set_point_count(ui_ChartPos, 100);
+    lv_chart_set_range(ui_ChartPos, LV_CHART_AXIS_SECONDARY_Y, 0, 0);
+    lv_chart_set_axis_tick(ui_ChartPos, LV_CHART_AXIS_PRIMARY_X, 10, 5, 5, 2, true, 50);
+    lv_chart_set_axis_tick(ui_ChartPos, LV_CHART_AXIS_PRIMARY_Y, 10, 5, 5, 2, true, 50);
+    lv_chart_set_axis_tick(ui_ChartPos, LV_CHART_AXIS_SECONDARY_Y, 0, 0, 0, 0, true, 25);
+    //lv_chart_series_t * ui_ChartPos_series_1 = lv_chart_add_series(ui_ChartPos, lv_color_hex(0xC51414),
+    //                                                               LV_CHART_AXIS_PRIMARY_Y);
+    //static lv_coord_t ui_ChartPos_series_1_array[] = { 0 };
+    //lv_chart_set_ext_y_array(ui_ChartPos, ui_ChartPos_series_1, ui_ChartPos_series_1_array);
+
+
+
     lv_obj_add_event_cb(ui_ScreenPosition, ui_event_ScreenPosition, LV_EVENT_ALL, NULL);
 
 }

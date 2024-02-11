@@ -12,6 +12,7 @@
 #include "GUI/ui.h"
 #include "lvgl_gui.h"
 #include <esp_log.h>
+#include <math.h>
 
 #include "signal_capture.h"
 #include "config.h"
@@ -33,6 +34,8 @@
 
 #define USER_GUI_MAX_LINE_LENGTH    150
 
+#define LAT_DEG_TO_M    (1852.0f * 60.0f)
+
 //Touchscreen driver
 static lv_indev_drv_t indev_drv;
 lv_indev_t * indev_touchpad;
@@ -48,6 +51,7 @@ uint8_t gui_state_have_data_copied = 0;
 extern gps_ch_t gps_channels[GPS_SAT_CNT];
 
 lv_chart_series_t *lvgl_iq_series;
+lv_chart_series_t *lvgl_pos_series;
 
 #if (ENABLE_CALC_POSITION)
   sol_t gui_gps_sol = {0};
@@ -66,15 +70,20 @@ void startup_actions(void);
 void create_state_table(void);
 void lvgl_gui_display_init(void);
 void prepare_iq_plot(void);
+void prepare_pos_plot(void);
 
 void lvgl_redraw_state_screen(void);
 void lvgl_redraw_iq_screen(void);
+void lvgl_redraw_position_screen(void);
 
 void lvgl_generate_state_table_line(uint8_t sat_idx, char *line_txt);
 uint16_t print_state_acquisition_channel(
     gps_gui_ch_t *channel, char *line_txt, uint16_t max_len);
 uint16_t print_state_tracking_channel(
     gps_gui_ch_t *channel, char *line_txt, uint16_t max_len);
+
+void print_state_conv_pos(float lat, float lon, float *x, float *y);
+void lvgl_draw_current_pos(float x, float y);
 //*************************************************************
 //*************************************************************
 
@@ -126,6 +135,8 @@ static void user_gui_update_cb(lv_timer_t * timer)
         lvgl_redraw_state_screen();
     else if (activeScreen == ui_ScreenIQ)
         lvgl_redraw_iq_screen();
+    else if (activeScreen == ui_ScreenPosition)
+        lvgl_redraw_position_screen();
 
 }
 
@@ -218,8 +229,10 @@ void startup_actions(void)
     create_state_table();
     change_keyboard1();
     prepare_iq_plot();
+    prepare_pos_plot();
 
     lvgl_update_configure_controls(gps_channels);
+    
 }
 
 void create_state_table(void)
@@ -257,9 +270,24 @@ void prepare_iq_plot(void)
 #endif
 }
 
+//Position plot
+void prepare_pos_plot(void)
+{
+    lv_chart_set_point_count(ui_ChartPos, 5);
+    lv_chart_set_range(ui_ChartPos, LV_CHART_AXIS_PRIMARY_X, -POS_PLOT_MAX_M, POS_PLOT_MAX_M);
+    lv_chart_set_range(ui_ChartPos, LV_CHART_AXIS_PRIMARY_Y, -POS_PLOT_MAX_M, POS_PLOT_MAX_M);
+    lv_obj_set_style_line_width(ui_ChartPos, 1, LV_PART_ITEMS);
+
+    lvgl_pos_series = lv_chart_add_series(ui_ChartPos, lv_color_hex(0xC51414),
+        LV_CHART_AXIS_PRIMARY_Y);
+    lv_obj_set_style_size(ui_ChartPos, 3, LV_PART_INDICATOR);
+
+    lv_chart_set_div_line_count(ui_ChartPos, 5, 5);
+}
+
 //####################################################
 
-/// @brief Store GPS data for future dsplaying
+/// @brief Store GPS data for future displaying
 /// Need to be called from GPS master
 /// @param channels 
 void lvgl_store_gps_state(gps_ch_t *channels)
@@ -352,8 +380,6 @@ void lvgl_redraw_state_screen(void)
     }
 
 #if (ENABLE_CALC_POSITION)
-  if (gui_gps_sol.stat != SOLQ_NONE)
-  {
     tmp_time = gui_gps_sol.time.time - GPS_UTC_TIME_OFFSET_S;
     write_prt += sprintf(write_prt, "UTC TIME: %s", ctime(&tmp_time));
     if (gui_last_pos_ok_flag)
@@ -366,7 +392,6 @@ void lvgl_redraw_state_screen(void)
         write_prt += sprintf(
             write_prt, LV_SYMBOL_CLOSE "POS: %2.5f %2.5f", gui_final_pos[0], gui_final_pos[1]);
     }
-  }
 #endif
 
     lv_label_set_text(ui_lblStateCommon, tmp_txt);
@@ -380,6 +405,77 @@ void lvgl_redraw_iq_screen(void)
         idx = GPS_SAT_CNT - 1;
     lv_chart_set_ext_x_array(ui_Chart1, lvgl_iq_series, gps_channels[idx].tracking_data.plot_i);
     lv_chart_set_ext_y_array(ui_Chart1, lvgl_iq_series, gps_channels[idx].tracking_data.plot_q);
+}
+
+//Called periodically from user_gui_update_cb <= TIMER <= lv_timer_handler() in gui_task()
+void lvgl_redraw_position_screen(void)
+{
+#if (ENABLE_CALC_POSITION)
+    static uint16_t counter = 0;
+    static float x_zero, y_zero;//Pos. Value in m
+
+    if (gui_last_pos_ok_flag == 0)
+        return;
+
+    counter++;
+    if (counter == 1)
+    {
+        return;//Skip first point
+    }
+
+    float x, y;//Pos. Value in m
+    print_state_conv_pos(gui_final_pos[0], gui_final_pos[1], &x, &y);//Conv. to meters
+
+    if (counter == 2)
+    {
+        // Latch zeo point
+        x_zero = x;
+        y_zero = y;
+    }
+    // Remove offset
+    x = x - x_zero;
+    y = y - y_zero;
+
+    lvgl_draw_current_pos(x, y);
+
+#endif
+}
+
+// X/Y - in meters
+void lvgl_draw_current_pos(float x, float y)
+{
+    static uint16_t point_count = 0;
+    static int16_t buf_x[POS_PLOT_MAX_POINTS] = {0};
+    static int16_t buf_y[POS_PLOT_MAX_POINTS] = {0};
+
+    point_count++;
+    if (point_count >= POS_PLOT_MAX_POINTS)
+    {
+        point_count = POS_PLOT_MAX_POINTS;
+
+        //Shift left
+        for (uint16_t i = 0; i < POS_PLOT_MAX_POINTS - 1; i++)
+        {
+            buf_x[i] = buf_x[i+1];
+            buf_y[i] = buf_y[i+1];
+        }
+    }
+
+    lv_chart_set_point_count(ui_ChartPos, point_count);
+
+    buf_x[point_count - 1] = (int16_t)x;
+    buf_y[point_count - 1] = (int16_t)y;
+
+    lv_chart_set_ext_x_array(ui_ChartPos, lvgl_pos_series, buf_x);
+    lv_chart_set_ext_y_array(ui_ChartPos, lvgl_pos_series, buf_y); 
+}
+
+//Convert Lat/Long coordinates to X/Y in meters - inaccurate
+void print_state_conv_pos(float lat, float lon, float *x, float *y)
+{
+  *y = lat * LAT_DEG_TO_M;
+  float long_deg_to_m = LAT_DEG_TO_M * cosf(lat / 180.0f * 3.1416f);
+  *x = long_deg_to_m * lon;
 }
 
 /// Load satellites settings

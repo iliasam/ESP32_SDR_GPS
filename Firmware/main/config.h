@@ -40,8 +40,7 @@
 //Draw IQ plot
 #define ENABLE_IQ_PLOT          1
 #define IQ_PLOT_POINTS_CNT      50
-#define IQ_PLOT_MAX             100 //Axis Max
-#define IQ_PLOT_SIGNAL_MAX      1000
+
 
 #define ACQ_SEARCH_FREQ_HZ      (7000) //Search zone is x2
 #define ACQ_SEARCH_STEP_HZ      (500)
@@ -79,5 +78,13 @@
 #define TRACKING_FLL1_C2        (2000.0f)
 
 #define GPS_BUILD_WEEK          2290 //NOV 2023
+
+//*************
+//if ENABLE_IQ_PLOT
+#define IQ_PLOT_MAX             100 //Axis Max +/-
+#define IQ_PLOT_SIGNAL_MAX      1000
+
+#define POS_PLOT_MAX_M          100 //Axis Max +/-
+#define POS_PLOT_MAX_POINTS     300 //FIFO for points
 
 #endif
