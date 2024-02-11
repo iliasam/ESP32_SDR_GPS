@@ -14,7 +14,6 @@ void btnStartStopPressed(lv_event_t * e);
 void funcShowKeyboard(lv_event_t * e);
 void btnStopClick(lv_event_t * e);
 void btnCodeSearchClick(lv_event_t * e);
-void func_IQSatChanged(lv_event_t * e);
 
 #ifdef __cplusplus
 } /*extern "C"*/

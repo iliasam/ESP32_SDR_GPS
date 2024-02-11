@@ -4,6 +4,7 @@
 // Project name: SquareLine_Project-GPS
 
 #include "ui.h"
+#include "gps_master.h"
 
 static lv_obj_tree_walk_res_t disable_object_cb(lv_obj_t * obj, void * user_data)
 {
@@ -54,11 +55,7 @@ void btnStopClick(lv_event_t * e)
 
 void btnCodeSearchClick(lv_event_t * e)
 {
+	gps_master_start_reset_to_aqc_start();
 	lv_indev_wait_release(lv_indev_get_act());
   	_ui_screen_change(&ui_ScreenState, LV_SCR_LOAD_ANIM_MOVE_LEFT, 0, 0, &ui_ScreenState_screen_init);
-}
-
-void func_IQSatChanged(lv_event_t * e)
-{
-	// Your code here
 }

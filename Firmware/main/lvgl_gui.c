@@ -256,7 +256,7 @@ void create_state_table(void)
     _ui_flag_modify(table_state, LV_OBJ_FLAG_CLICKABLE, _UI_MODIFY_FLAG_REMOVE);
 }
 
-
+//Prepare IQ plot - init
 void prepare_iq_plot(void)
 {
 #if (ENABLE_IQ_PLOT)
@@ -270,7 +270,7 @@ void prepare_iq_plot(void)
 #endif
 }
 
-//Position plot
+//Prepare Position plot - init
 void prepare_pos_plot(void)
 {
     lv_chart_set_point_count(ui_ChartPos, 5);
@@ -380,17 +380,20 @@ void lvgl_redraw_state_screen(void)
     }
 
 #if (ENABLE_CALC_POSITION)
-    tmp_time = gui_gps_sol.time.time - GPS_UTC_TIME_OFFSET_S;
-    write_prt += sprintf(write_prt, "UTC TIME: %s", ctime(&tmp_time));
-    if (gui_last_pos_ok_flag)
-    {   
-        write_prt += sprintf(
-            write_prt, LV_SYMBOL_GPS "POS: %2.5f %2.5f", gui_final_pos[0], gui_final_pos[1]);
-    }
-    else
+    if (gui_gps_sol.stat != SOLQ_NONE)
     {
-        write_prt += sprintf(
-            write_prt, LV_SYMBOL_CLOSE "POS: %2.5f %2.5f", gui_final_pos[0], gui_final_pos[1]);
+        tmp_time = gui_gps_sol.time.time - GPS_UTC_TIME_OFFSET_S;
+        write_prt += sprintf(write_prt, "UTC TIME: %s", ctime(&tmp_time));
+        if (gui_last_pos_ok_flag)
+        {
+            write_prt += sprintf(
+                write_prt, LV_SYMBOL_GPS "POS: %2.5f %2.5f", gui_final_pos[0], gui_final_pos[1]);
+        }
+        else
+        {
+            write_prt += sprintf(
+                write_prt, LV_SYMBOL_CLOSE "POS: %2.5f %2.5f", gui_final_pos[0], gui_final_pos[1]);
+        }
     }
 #endif
 
@@ -441,7 +444,7 @@ void lvgl_redraw_position_screen(void)
 #endif
 }
 
-// X/Y - in meters
+// Add point to chart, X/Y - in meters
 void lvgl_draw_current_pos(float x, float y)
 {
     static uint16_t point_count = 0;
@@ -497,6 +500,7 @@ void lvgl_update_configure_controls(gps_ch_t *channels)
     }
 }
 
+///Generate text for one table line
 void lvgl_generate_state_table_line(uint8_t sat_idx, char *line_txt)
 {
     memset(line_txt, 0, USER_GUI_MAX_LINE_LENGTH);
@@ -533,13 +537,13 @@ uint16_t print_state_tracking_channel(
     switch (channel->track_state)
     {
     case GPS_NEED_PRE_TRACK:
-        char_cnt = snprintf(line_txt, len, "NEED PRE_TRACK");
+        char_cnt = snprintf(line_txt, len, "NEED PRE_TRACK ");
         break;
     case GPS_PRE_TRACK_RUN:
-        char_cnt = snprintf(line_txt, len, "PRE_TRACK RUN");
+        char_cnt = snprintf(line_txt, len, "PRE_TRK ");
         break;
     case GPS_PRE_TRACK_DONE:
-        char_cnt = snprintf(line_txt, len, "PRE_TRACK DONE");
+        char_cnt = snprintf(line_txt, len, "PRE_TRK DONE ");
         break;
     case GPS_TRACKING_RUN:
         char_cnt = snprintf(line_txt, len, "*TRK* | ");
@@ -551,14 +555,18 @@ uint16_t print_state_tracking_channel(
     len -= char_cnt;
 
     uint16_t code = (uint16_t)channel->track_code_phase_fine / 16;
-    char_cnt = snprintf(line_txt, len, "SNR=%2.0fdB Freq=%5d Hz \nCode=%4d chips | wrd=%3d ", 
-        channel->track_snr,
-        channel->track_if_freq_offset_hz,
-        code, 
-        channel->nav_word_cnt);
+    if (channel->track_state == GPS_TRACKING_RUN)
+    {
+        char_cnt = snprintf(
+            line_txt, len, "SNR=%2.0fdB Freq=%5d Hz \nCode=%4d chips | wrd=%3d ",
+            channel->track_snr,
+            channel->track_if_freq_offset_hz,
+            code,
+            channel->nav_word_cnt);
 
-    line_txt += char_cnt;
-    len -= char_cnt;
+        line_txt += char_cnt;
+        len -= char_cnt;
+    }
 
     if (channel->nav_pol_found)
     {

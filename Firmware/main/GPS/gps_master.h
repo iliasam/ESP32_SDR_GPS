@@ -15,6 +15,7 @@ uint8_t gps_master_need_solve(void);
 void gps_master_run_solving(void);
 
 void gps_master_reset_to_aqc_start(gps_ch_t* channels);
+void gps_master_start_reset_to_aqc_start(void);
 #endif
 
 

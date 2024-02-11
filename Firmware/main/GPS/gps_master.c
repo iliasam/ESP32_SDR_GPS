@@ -45,6 +45,7 @@ uint8_t gps_common_need_acq = 1;
 uint8_t gps_common_need_solve = 0;
 
 uint8_t gps_start_flag = 1;
+uint8_t gps_master_need_acq_reset_flag = 0;
 
 void gps_master_nav_handling(gps_ch_t* channels);
 void gps_master_transmit_obs(gps_ch_t* channels);
@@ -66,12 +67,16 @@ void gps_master_code_phase_filter_reset(
 
 void gps_master_handling(gps_ch_t* channels, uint8_t index)
 {
-  //gps_ch_t* curr_ch = channels;
-  
   if (gps_start_flag)
   {
     gps_start_flag = 0;
-    acquisition_start_channel(&channels[0]);
+    acquisition_start_channel(channels);
+  }
+
+  if (gps_master_need_acq_reset_flag)//set manually
+  {
+    gps_master_need_acq_reset_flag = 0;
+    gps_master_reset_to_aqc_start(channels);
   }
   
   gps_common_need_acq = 0;
@@ -468,6 +473,11 @@ uint8_t gps_master_need_solve(void)
   return gps_common_need_solve;
 }
 
+//Set flag - Reset all channels to acquisition code search 
+void gps_master_start_reset_to_aqc_start(void)
+{
+  gps_master_need_acq_reset_flag = 1;
+}
 
 //Reset all channels to acquisition code search 
 void gps_master_reset_to_aqc_start(gps_ch_t* channels)
