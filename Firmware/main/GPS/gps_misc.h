@@ -94,9 +94,9 @@ typedef struct
 #endif
 
 #if (ENABLE_IQ_PLOT)
-  int16_t     plot_i[IQ_PLOT_POINTS_CNT];//I points
-  int16_t     plot_q[IQ_PLOT_POINTS_CNT];//I points
-  uint16_t    plot_cnt;//circular counter, 0..IQ_PLOT_POINTS_CNT-1
+  int16_t       plot_i[IQ_PLOT_POINTS_CNT];//I points
+  int16_t       plot_q[IQ_PLOT_POINTS_CNT];//I points
+  uint16_t      plot_cnt;//circular counter, 0..IQ_PLOT_POINTS_CNT-1
 #endif
   
   gps_tracking_state_t	state;

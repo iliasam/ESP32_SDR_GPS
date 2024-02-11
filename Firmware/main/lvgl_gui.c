@@ -52,6 +52,7 @@ lv_chart_series_t *lvgl_iq_series;
 #if (ENABLE_CALC_POSITION)
   sol_t gui_gps_sol = {0};
   double gui_final_pos[3];
+  uint8_t gui_last_pos_ok_flag = 0;
 #endif
 
 //*************************************************************
@@ -217,6 +218,8 @@ void startup_actions(void)
     create_state_table();
     change_keyboard1();
     prepare_iq_plot();
+
+    lvgl_update_configure_controls(gps_channels);
 }
 
 void create_state_table(void)
@@ -303,7 +306,10 @@ void lvgl_store_new_position(sol_t *gps_sol_p, double *position)
     {
         memcpy(&gui_gps_sol, gps_sol_p, sizeof(sol_t));
         memcpy(gui_final_pos, position, sizeof(gui_final_pos));
+        gui_last_pos_ok_flag = 1;
     }
+    else
+        gui_last_pos_ok_flag = 0;
 }
 #endif
 
@@ -350,17 +356,49 @@ void lvgl_redraw_state_screen(void)
   {
     tmp_time = gui_gps_sol.time.time - GPS_UTC_TIME_OFFSET_S;
     write_prt += sprintf(write_prt, "UTC TIME: %s", ctime(&tmp_time));
-    write_prt += sprintf(write_prt, LV_SYMBOL_GPS "POS: %2.5f %2.5f", gui_final_pos[0], gui_final_pos[1]);
+    if (gui_last_pos_ok_flag)
+    {   
+        write_prt += sprintf(
+            write_prt, LV_SYMBOL_GPS "POS: %2.5f %2.5f", gui_final_pos[0], gui_final_pos[1]);
+    }
+    else
+    {
+        write_prt += sprintf(
+            write_prt, LV_SYMBOL_CLOSE "POS: %2.5f %2.5f", gui_final_pos[0], gui_final_pos[1]);
+    }
   }
 #endif
 
     lv_label_set_text(ui_lblStateCommon, tmp_txt);
 }
 
+//Called periodically from user_gui_update_cb <= TIMER <= lv_timer_handler() in gui_task()
 void lvgl_redraw_iq_screen(void)
 {
-    lv_chart_set_ext_x_array(ui_Chart1, lvgl_iq_series, gps_channels[0].tracking_data.plot_i);
-    lv_chart_set_ext_y_array(ui_Chart1, lvgl_iq_series, gps_channels[0].tracking_data.plot_q);
+    uint8_t idx = lv_roller_get_selected(ui_Roller1);
+    if (idx >= GPS_SAT_CNT)
+        idx = GPS_SAT_CNT - 1;
+    lv_chart_set_ext_x_array(ui_Chart1, lvgl_iq_series, gps_channels[idx].tracking_data.plot_i);
+    lv_chart_set_ext_y_array(ui_Chart1, lvgl_iq_series, gps_channels[idx].tracking_data.plot_q);
+}
+
+/// Load satellites settings
+void lvgl_update_configure_controls(gps_ch_t *channels)
+{
+    char tmp_text[16];
+    lv_obj_t *txt_prn_list[GPS_SAT_CNT] =
+        {ui_TextAreaPRN1, ui_TextAreaPRN2, ui_TextAreaPRN3, ui_TextAreaPRN4};
+    lv_obj_t *txt_freq_list[GPS_SAT_CNT] =
+        {ui_TextAreaFreq1, ui_TextAreaFreq2, ui_TextAreaFreq3, ui_TextAreaFreq4};
+
+    for (uint8_t i = 0; i < GPS_SAT_CNT; i++)
+    {
+        itoa(channels[i].prn, tmp_text, 10);
+        lv_textarea_set_text(txt_prn_list[i], tmp_text);
+
+        itoa(channels[i].acq_data.given_freq_offset_hz, tmp_text, 10);
+        lv_textarea_set_text(txt_freq_list[i], tmp_text);
+    }
 }
 
 void lvgl_generate_state_table_line(uint8_t sat_idx, char *line_txt)

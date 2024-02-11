@@ -57,6 +57,9 @@
 //#define IF_NCO_STEP_HZ        ((float)SPI_BAUDRATE_HZ / (float)(1 << 32)) //NCO accumulator is 32bit
 #define IF_NCO_STEP_HZ	        (0.003810972f)
 
+//Channel SNR must be bigger that this value for producing observations
+#define OBS_SNR_THRESHOLD_DB    (3.0f)
+
 // Number of analysed PRN periods in one channal
 #define TRACKING_CH_LENGTH      4
 

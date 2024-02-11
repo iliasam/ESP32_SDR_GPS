@@ -183,6 +183,9 @@ void gps_master_nav_handling(gps_ch_t* channels)
     
     if (channels[i].nav_data.subframe_cnt > max_subframe_cnt)
       max_subframe_cnt = channels[i].nav_data.subframe_cnt;
+
+    if (channels[i].tracking_data.snr_value < OBS_SNR_THRESHOLD_DB)
+      return;
   }
   
   if (min_subframe_time == 0)
