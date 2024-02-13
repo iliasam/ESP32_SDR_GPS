@@ -80,7 +80,7 @@ void gps_master_handling(gps_ch_t* channels, uint8_t index)
   if (gps_master_need_acq_reset_flag)//set manually
   {
     gps_master_need_acq_reset_flag = 0;
-    gps_master_reset_to_aqc_start(channels);
+    gps_master_reset_to_aqc_start(&channels[0]);//first
   }
   
   gps_common_need_acq = 0;
