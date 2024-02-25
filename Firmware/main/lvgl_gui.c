@@ -207,6 +207,24 @@ void lvgl_touchscreen_init(void)
         ESP_LOGE(GUI_TAG, "Touchscreen init fail");
 }
 
+// Key long pressed callback
+void lvgl_event_key_long_press(lv_event_t * e)
+{
+    lv_obj_t * obj = lv_event_get_target(e);
+    uint16_t btn_id   = lv_btnmatrix_get_selected_btn(obj);
+    if(btn_id == LV_BTNMATRIX_BTN_NONE) return;
+
+    const char * txt = lv_btnmatrix_get_btn_text(obj, lv_btnmatrix_get_selected_btn(obj));
+    
+    if(strcmp(txt, LV_SYMBOL_BACKSPACE) == 0)//Pressed key is "Delete"
+    {
+        lv_keyboard_t * keyboard = (lv_keyboard_t *)obj;
+        if(keyboard->ta == NULL) 
+            return;
+        lv_textarea_set_text(keyboard->ta, "-");
+    }
+}
+
 void change_keyboard1(void)
 {
     /*Create a keyboard map*/
@@ -217,10 +235,26 @@ void change_keyboard1(void)
         LV_SYMBOL_BACKSPACE, "0", LV_SYMBOL_OK, NULL };
 
     /*Set the relative width of the buttons and other controls*/
-    static const lv_btnmatrix_ctrl_t kb_ctrl[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+    static const lv_btnmatrix_ctrl_t kb_ctrl[] = 
+    {
+        1 | LV_BTNMATRIX_CTRL_NO_REPEAT, 
+        1 | LV_BTNMATRIX_CTRL_NO_REPEAT, 
+        1 | LV_BTNMATRIX_CTRL_NO_REPEAT, 
+        1 | LV_BTNMATRIX_CTRL_NO_REPEAT, 
+        1 | LV_BTNMATRIX_CTRL_NO_REPEAT, 
+        1 | LV_BTNMATRIX_CTRL_NO_REPEAT, 
+        1 | LV_BTNMATRIX_CTRL_NO_REPEAT,  
+        1 | LV_BTNMATRIX_CTRL_NO_REPEAT,  
+        1 | LV_BTNMATRIX_CTRL_NO_REPEAT, 
+        1 | LV_BTNMATRIX_CTRL_NO_REPEAT,  
+        1 | LV_BTNMATRIX_CTRL_NO_REPEAT,  
+        1 | LV_BTNMATRIX_CTRL_NO_REPEAT};
 
     lv_keyboard_set_map(ui_Keyboard1, LV_KEYBOARD_MODE_USER_1, kb_map, kb_ctrl);
     lv_keyboard_set_mode(ui_Keyboard1, LV_KEYBOARD_MODE_USER_1);
+
+    lv_obj_add_event_cb(ui_Keyboard1, lvgl_event_key_long_press, LV_EVENT_LONG_PRESSED, NULL);
+    
 }
 
 void startup_actions(void)
@@ -506,6 +540,7 @@ void lvgl_update_init_configure_controls(gps_ch_t *channels)
 
 /// @brief Save satellites settings - "Configure" screen.
 /// Tracking freq. -> GUI
+/// Called after stop
 void lvgl_save_to_configure_controls(gps_ch_t *channels)
 {
     char tmp_text[16];
@@ -517,13 +552,24 @@ void lvgl_save_to_configure_controls(gps_ch_t *channels)
         //Save frequency data, if we have it
         if (channels[i].nav_data.word_cnt_test > 1)
         {
+            //Save tracking frequency
             itoa((int16_t)channels[i].tracking_data.if_freq_offset_hz, tmp_text, 10);
             lv_textarea_set_text(txt_freq_list[i], tmp_text);
+        }
+        else if (channels[i].acq_data.given_freq_offset_hz == 0)//frq. search is used
+        {
+            if (channels[i].acq_data.found_freq_offset_hz != 0)
+            {
+                //Save found acquisition frequency
+                itoa((int16_t)channels[i].acq_data.found_freq_offset_hz, tmp_text, 10);
+                lv_textarea_set_text(txt_freq_list[i], tmp_text);
+            }
         }
     }
 }
 
 /// @brief Read satellites configuraton from GUI
+/// Called at the start
 void lvgl_read_sat_cfg_from_gui(gps_ch_t *channels)
 {
     lv_obj_t *txt_prn_list[GPS_SAT_CNT] =

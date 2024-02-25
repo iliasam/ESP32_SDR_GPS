@@ -28,6 +28,7 @@
     "future": "c",
     "system_error": "c",
     "regex": "c",
-    "esp_log.h": "c"
+    "esp_log.h": "c",
+    "functional": "c"
   }
 }

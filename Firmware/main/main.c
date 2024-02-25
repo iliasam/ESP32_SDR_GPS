@@ -66,7 +66,7 @@ void app_main(void)
     gps_channels[0].acq_data.given_freq_offset_hz = 900;
 
     gps_channels[1].prn = 14;
-    gps_channels[1].acq_data.given_freq_offset_hz = 4000
+    gps_channels[1].acq_data.given_freq_offset_hz = 4000;
 
     gps_channels[2].prn = 20;
     gps_channels[2].acq_data.given_freq_offset_hz = -1000;
