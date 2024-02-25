@@ -34,6 +34,6 @@ void gui_task(void *pvParameter);
 void lvgl_store_gps_state(gps_ch_t *channels);
 void lvgl_store_new_position(sol_t *gps_sol_p, double *position);
 
-void lvgl_update_configure_controls(gps_ch_t *channels);
-
+void lvgl_save_global_sat_states_to_gui(void);
+void lvgl_read_global_sat_cfg_from_gui(void);
 #endif

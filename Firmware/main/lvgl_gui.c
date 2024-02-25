@@ -72,6 +72,10 @@ void lvgl_gui_display_init(void);
 void prepare_iq_plot(void);
 void prepare_pos_plot(void);
 
+void lvgl_update_init_configure_controls(gps_ch_t *channels);
+void lvgl_save_to_configure_controls(gps_ch_t *channels);
+void lvgl_read_sat_cfg_from_gui(gps_ch_t *channels);
+
 void lvgl_redraw_state_screen(void);
 void lvgl_redraw_iq_screen(void);
 void lvgl_redraw_position_screen(void);
@@ -231,7 +235,7 @@ void startup_actions(void)
     prepare_iq_plot();
     prepare_pos_plot();
 
-    lvgl_update_configure_controls(gps_channels);
+    lvgl_update_init_configure_controls(gps_channels);
     
 }
 
@@ -481,8 +485,8 @@ void print_state_conv_pos(float lat, float lon, float *x, float *y)
   *x = long_deg_to_m * lon;
 }
 
-/// Load satellites settings
-void lvgl_update_configure_controls(gps_ch_t *channels)
+/// @brief Load satellites settings - "Configure" screen
+void lvgl_update_init_configure_controls(gps_ch_t *channels)
 {
     char tmp_text[16];
     lv_obj_t *txt_prn_list[GPS_SAT_CNT] =
@@ -500,7 +504,60 @@ void lvgl_update_configure_controls(gps_ch_t *channels)
     }
 }
 
-///Generate text for one table line
+/// @brief Save satellites settings - "Configure" screen.
+/// Tracking freq. -> GUI
+void lvgl_save_to_configure_controls(gps_ch_t *channels)
+{
+    char tmp_text[16];
+    lv_obj_t *txt_freq_list[GPS_SAT_CNT] =
+        {ui_TextAreaFreq1, ui_TextAreaFreq2, ui_TextAreaFreq3, ui_TextAreaFreq4};
+
+    for (uint8_t i = 0; i < GPS_SAT_CNT; i++)
+    {
+        //Save frequency data, if we have it
+        if (channels[i].nav_data.word_cnt_test > 1)
+        {
+            itoa((int16_t)channels[i].tracking_data.if_freq_offset_hz, tmp_text, 10);
+            lv_textarea_set_text(txt_freq_list[i], tmp_text);
+        }
+    }
+}
+
+/// @brief Read satellites configuraton from GUI
+void lvgl_read_sat_cfg_from_gui(gps_ch_t *channels)
+{
+    lv_obj_t *txt_prn_list[GPS_SAT_CNT] =
+        {ui_TextAreaPRN1, ui_TextAreaPRN2, ui_TextAreaPRN3, ui_TextAreaPRN4};
+    lv_obj_t *txt_freq_list[GPS_SAT_CNT] =
+        {ui_TextAreaFreq1, ui_TextAreaFreq2, ui_TextAreaFreq3, ui_TextAreaFreq4};
+
+    for (uint8_t i = 0; i < GPS_SAT_CNT; i++)
+    {
+        int tmp_val = 0;
+        const char *freq_txt = lv_textarea_get_text(txt_freq_list[i]);
+        sscanf(freq_txt, "%d", &tmp_val);
+        channels[i].acq_data.given_freq_offset_hz = (int16_t)tmp_val;
+
+        const char *prn_txt = lv_textarea_get_text(txt_prn_list[i]);
+        sscanf(prn_txt, "%d", &tmp_val);
+        channels[i].prn = (int16_t)tmp_val;
+    }
+}
+
+/// @brief Save satellites states to the GUI conrols.  
+/// Tracking freq. -> GUI
+void lvgl_save_global_sat_states_to_gui(void)
+{
+    lvgl_save_to_configure_controls(gps_channels);
+}
+
+/// @brief Read global satellites configuraton from GUI
+void lvgl_read_global_sat_cfg_from_gui(void)
+{
+    lvgl_read_sat_cfg_from_gui(gps_channels);
+}
+
+/// @brief Generate text for one table line
 void lvgl_generate_state_table_line(uint8_t sat_idx, char *line_txt)
 {
     memset(line_txt, 0, USER_GUI_MAX_LINE_LENGTH);

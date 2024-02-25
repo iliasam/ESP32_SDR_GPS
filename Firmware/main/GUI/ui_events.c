@@ -5,6 +5,7 @@
 
 #include "ui.h"
 #include "gps_master.h"
+#include "lvgl_gui.h"
 
 static lv_obj_tree_walk_res_t disable_object_cb(lv_obj_t * obj, void * user_data)
 {
@@ -26,15 +27,18 @@ void btnStartStopPressed(lv_event_t * e)
 	//lv_obj_set_click(ui_btnStartStop, false);
 	lv_obj_add_state(ui_btnStartStop, LV_STATE_DISABLED);
 
-	lv_obj_tree_walk(ui_PanelConfigureSats, disable_object_cb, NULL); //lock panel elements
+ 	//lock panel child elements
+	lv_obj_tree_walk(ui_PanelConfigureSats, disable_object_cb, NULL);
 	lv_obj_clear_state(ui_PanelConfigureSats, LV_STATE_DISABLED);
 
 	lv_obj_clear_state(ui_btnStop, LV_STATE_DISABLED);
     lv_obj_clear_state(ui_btnRestartAcq, LV_STATE_DISABLED);
 
 	lv_indev_wait_release(lv_indev_get_act());
+	//go to next screen
   	_ui_screen_change(&ui_ScreenState, LV_SCR_LOAD_ANIM_MOVE_LEFT, 0, 0, &ui_ScreenState_screen_init);
 
+	lvgl_read_global_sat_cfg_from_gui();
 	gps_master_start_receiver();
 }
 
@@ -53,6 +57,9 @@ void btnStopClick(lv_event_t * e)
 	lv_obj_clear_state(ui_btnStartStop, LV_STATE_DISABLED);
 
 	lv_obj_tree_walk(ui_PanelConfigureSats, enable_object_cb, NULL);//activate panel elements
+
+	lvgl_save_global_sat_states_to_gui();
+	gps_master_stop_receiver();
 }
 
 void btnCodeSearchClick(lv_event_t * e)

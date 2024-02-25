@@ -1,5 +1,8 @@
-//GPS master is a code that controllig acquisition in all channels, start tracking
-//and controllling sending RTCM and position calculation
+//GPS master is a code that controlling acquisition in all channels, start tracking
+//and controlling sending RTCM and position calculation
+
+// I'm not sure that gps_master_nav_handling() will work OK inn all cases
+//This is just a demo!
 
 #include "stdint.h"
 #include "string.h"
@@ -46,11 +49,16 @@ uint8_t gps_common_need_solve = 0;
 
 uint8_t gps_run_enabled = 0;
 uint8_t gps_start_flag = 1;
+uint8_t gps_stop_flag = 0;
 uint8_t gps_master_need_acq_reset_flag = 0;
+
+//******************************************************************
 
 void gps_master_nav_handling(gps_ch_t* channels);
 void gps_master_transmit_obs(gps_ch_t* channels);
 void gps_master_calculate_pos_handling(gps_ch_t* channels);
+
+void gps_master_stop_channels(gps_ch_t* channels);
 
 void gps_master_final_pseudorange_calc(
   gps_ch_t* channels, uint32_t curr_tick_time, 
@@ -68,12 +76,21 @@ void gps_master_code_phase_filter_reset(
 
 void gps_master_handling(gps_ch_t* channels, uint8_t index)
 {
+  if (gps_stop_flag)
+  {
+    gps_stop_flag = 0;
+    gps_master_stop_channels(channels);
+  }
+
   if (gps_run_enabled == 0)
     return;
 
   if (gps_start_flag)
   {
     gps_start_flag = 0;
+
+    for (uint8_t i = 0; i < GPS_SAT_CNT; i++)
+      gps_channell_prepare(&channels[i]);
     acquisition_start_channel(channels);
   }
 
@@ -201,7 +218,7 @@ void gps_master_nav_handling(gps_ch_t* channels)
     return;
   
   uint32_t diff_ms = max_subframe_time - min_subframe_time;
-  if (diff_ms > 100)//wait untill all subframes of this epoch get received (they will have similiar times)
+  if (diff_ms > 100)//wait until all subframes of this epoch get received (they will have similiar times)
     return;
   
   if ((has_subframe_time_cnt == GPS_SAT_CNT) && 
@@ -287,7 +304,7 @@ void gps_master_nav_handling(gps_ch_t* channels)
   #endif
 }
 
-// Final pseudoranges and observaltions calculation
+// Final pseudoranges and observations calculation
 // channels - receiver channels
 // curr_tick_time - current receiving time in ms
 // ref_time_diff_ms - 
@@ -309,7 +326,7 @@ void gps_master_final_pseudorange_calc(
       channels[i].tracking_data.code_phase_fine / ((double)PRN_LENGTH * 16.0f);
 #endif
     
-    //Comepensating state when code phase swapped, but new subframe has not come yet
+    //Compensating state when code phase swapped, but new subframe has not come yet
     if (channels[i].tracking_data.code_phase_swap_flag == 1)
     {
       double corr_ms = 1.0f;
@@ -387,7 +404,7 @@ void gps_master_code_phase_filter_reset(
 
 
 #if (ENABLE_CALC_POSITION)
-//Calculate receiver positon - handling, do not run solving here!
+//Calculate receiver position - handling, do not run solving here!
 //Called from high priority task
 void gps_master_calculate_pos_handling(gps_ch_t* channels)
 {
@@ -395,7 +412,7 @@ void gps_master_calculate_pos_handling(gps_ch_t* channels)
   
   if (solving_is_busy() || gps_common_need_solve)
   {
-    //Processing already runing solving
+    //Processing already running solving
     return;
   }
   
@@ -477,10 +494,14 @@ uint8_t gps_master_need_solve(void)
   return gps_common_need_solve;
 }
 
-//Set flag - Reset all channels to acquisition code search 
-void gps_master_start_reset_to_aqc_start(void)
+void gps_master_stop_channels(gps_ch_t* channels)
 {
-  gps_master_need_acq_reset_flag = 1;
+  for (uint8_t i = 0; i < GPS_SAT_CNT; i++)
+  {
+    memset(&channels[i].acq_data, 0, sizeof(gps_acq_t)); 
+    memset(&channels[i].tracking_data, 0, sizeof(gps_tracking_t));
+    memset(&channels[i].nav_data, 0, sizeof(gps_nav_data_t));
+  }
 }
 
 //Reset all channels to acquisition code search 
@@ -506,11 +527,26 @@ void gps_master_reset_to_aqc_start(gps_ch_t* channels)
   }
 }
 
+//*********************************
+
+// Called by user
+//Set flag - Reset all channels to acquisition code search 
+void gps_master_start_reset_to_aqc_start(void)
+{
+  gps_master_need_acq_reset_flag = 1;
+}
+
 // Called by user
 void gps_master_start_receiver(void)
 {
   gps_run_enabled = 1;
   gps_start_flag = 1;
+}
+// Called by user
+void gps_master_stop_receiver(void)
+{
+  gps_run_enabled = 0;
+  gps_stop_flag = 1;
 }
 
 

@@ -5,7 +5,7 @@
 * Configured for ESP32-2432S024C board (SPI	ILI9341 + CST820 capacitive touchscreen)
 * -O2 optimization is used here
 * See config.h for GPS-SPI pinout
-* LCD+Touch pinut is set by menuconfig
+* LCD+Touch pinout is set by menuconfig
 * LVGL 8.3.0 is a managed component, must be downloaded by ESP-IDF
 * ESP-IDF 5.0 is used here
 */
@@ -64,19 +64,15 @@ void app_main(void)
     // user can enter known doppler frequency to make acquisition much faster
     gps_channels[0].prn = 5;
     gps_channels[0].acq_data.given_freq_offset_hz = 900;
-    gps_channell_prepare(&gps_channels[0]);
 
     gps_channels[1].prn = 14;
-    gps_channels[1].acq_data.given_freq_offset_hz = 4000;
-    gps_channell_prepare(&gps_channels[1]);
+    gps_channels[1].acq_data.given_freq_offset_hz = 4000
 
     gps_channels[2].prn = 20;
     gps_channels[2].acq_data.given_freq_offset_hz = -1000;
-    gps_channell_prepare(&gps_channels[2]);
 
     gps_channels[3].prn = 30;
     gps_channels[3].acq_data.given_freq_offset_hz = 2000;
-    gps_channell_prepare(&gps_channels[3]);
 
 #if (ENABLE_CALC_POSITION)
     gps_pos_solve_init(gps_channels);
@@ -87,7 +83,7 @@ void app_main(void)
     xTaskCreatePinnedToCore(gui_task, "gui", 4096*2, NULL, 0, NULL, 1);//Core 1
 }
 
-//High priority task, core 0
+// High priority task, core 0
 void fast_task(void *pvParameter)
 {
   static uint16_t blink_cnt = 0;
@@ -104,10 +100,8 @@ void fast_task(void *pvParameter)
       blink_cnt++;
       if (blink_cnt >= 256)
         blink_cnt = 0;
-
       gpio_set_level(LED_R_PIN, (blink_cnt > 128));
       
-
       uint8_t need_slow = gps_master_need_acq();
       if (need_slow)
       {
@@ -129,7 +123,7 @@ void fast_task(void *pvParameter)
   }
 }
 
-//Less priority task, core 0
+// Less priority task, core 0
 void main_task(void *pvParameter)
 {
     signal_capture_init();
@@ -159,7 +153,7 @@ void main_task(void *pvParameter)
     vTaskDelete(NULL);
 }
 
-//Tracking
+// Tracking
 void main_fast_data_proc(void)
 {
   uint8_t* signal_p = signal_capture_get_ready_buf();

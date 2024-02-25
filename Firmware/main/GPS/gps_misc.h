@@ -149,9 +149,9 @@ typedef struct { /* time struct */
   double sec;   /* fraction of second under 1 s */
 } gtime_t;
 
-typedef struct {        /* GPS/QZS/GAL broadcast ephemeris type */
+typedef struct {      /* GPS/QZS/GAL broadcast ephemeris type */
   int sat;            /* satellite number */
-  int iode, iodc;      /* IODE,IODC */
+  int iode, iodc;     /* IODE,IODC */
   int sva;            /* SV accuracy (URA index) */
   int svh;            /* SV health (0:ok) */
   int week;           /* GPS/QZS: gps week, GAL: galileo week */
@@ -163,7 +163,7 @@ typedef struct {        /* GPS/QZS/GAL broadcast ephemeris type */
   double crc, crs, cuc, cus, cic, cis;
   double toes;        /* Toe (s) in week */
   double fit;         /* fit interval (h) */
-  double f0, f1, f2;    /* SV clock parameters (af0,af1,af2) */
+  double f0, f1, f2;  /* SV clock parameters (af0,af1,af2) */
   double tgd[4];      /* group delay parameters */
   /* GPS/QZS:tgd[0]=TGD */
 } eph_t;
@@ -187,11 +187,11 @@ typedef struct {
 
 typedef struct
 {
-  gps_acq_t             acq_data;//Acq variables
-  gps_tracking_t        tracking_data;
-  gps_nav_data_t        nav_data;
+  gps_acq_t       acq_data;//Acq variables
+  gps_tracking_t  tracking_data;
+  gps_nav_data_t  nav_data;
   gps_obs_data_t	obs_data;
-  sdreph_t		eph_data;
+  sdreph_t        eph_data;
   uint8_t	        prn; //Sat PRN code
   uint8_t	        prn_code[PRN_LENGTH];//PRN data (0/1), generated at the start, 1023 bytes
 } gps_ch_t;
