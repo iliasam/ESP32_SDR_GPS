@@ -24,7 +24,7 @@ static lv_obj_tree_walk_res_t enable_object_cb(lv_obj_t * obj, void * user_data)
 //Button is placed at ui_ScreenConfigure
 void btnStartStopPressed(lv_event_t * e)
 {
-	//lv_obj_set_click(ui_btnStartStop, false);
+	//Disable button
 	lv_obj_add_state(ui_btnStartStop, LV_STATE_DISABLED);
 
  	//lock panel child elements

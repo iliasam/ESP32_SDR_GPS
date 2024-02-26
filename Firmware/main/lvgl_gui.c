@@ -43,6 +43,7 @@ static lv_color_t* disp_buf1;
 static lv_color_t* disp_buf2;
 
 lv_obj_t *table_state;
+/// @brief Stored data to display
 gps_gui_ch_t gps_channels_gui[GPS_SAT_CNT];
 
 /// @brief Set be fast task at core 0, cleared by slow gui_task at core 1.
@@ -65,17 +66,19 @@ static void lv_tick_task_cb(void *arg);
 static void user_gui_update_cb(lv_timer_t * timer);
 
 void lvgl_touchscreen_init(void);
-void change_keyboard1(void);
-void startup_actions(void);
-void create_state_table(void);
+void lvgl_change_keyboard1(void);
+void lvgl_startup_actions(void);
+void lvgl_create_state_table(void);
 void lvgl_gui_display_init(void);
-void prepare_iq_plot(void);
-void prepare_pos_plot(void);
+void lvgl_prepare_iq_plot(void);
+void lvgl_prepare_pos_plot(void);
 
 void lvgl_update_init_configure_controls(gps_ch_t *channels);
 void lvgl_save_to_configure_controls(gps_ch_t *channels);
 void lvgl_read_sat_cfg_from_gui(gps_ch_t *channels);
+uint8_t lvgl_check_configure_controls(void);
 
+void lvgl_redraw_configure_screen(void);
 void lvgl_redraw_state_screen(void);
 void lvgl_redraw_iq_screen(void);
 void lvgl_redraw_position_screen(void);
@@ -135,7 +138,9 @@ static void user_gui_update_cb(lv_timer_t * timer)
 {
     lv_obj_t *activeScreen = lv_scr_act();
 
-    if (activeScreen == ui_ScreenState)
+    if (activeScreen == ui_ScreenConfigure)
+        lvgl_redraw_configure_screen();
+    else if (activeScreen == ui_ScreenState)
         lvgl_redraw_state_screen();
     else if (activeScreen == ui_ScreenIQ)
         lvgl_redraw_iq_screen();
@@ -191,7 +196,7 @@ void lvgl_gui_display_init(void)
     //lv_port_indev_init(); //templates for input
 
     ui_init();
-    startup_actions();
+    lvgl_startup_actions();
 }
 
 void lvgl_touchscreen_init(void)
@@ -207,7 +212,7 @@ void lvgl_touchscreen_init(void)
         ESP_LOGE(GUI_TAG, "Touchscreen init fail");
 }
 
-// Key long pressed callback
+/// @brief Key long pressed callback
 void lvgl_event_key_long_press(lv_event_t * e)
 {
     lv_obj_t * obj = lv_event_get_target(e);
@@ -225,7 +230,9 @@ void lvgl_event_key_long_press(lv_event_t * e)
     }
 }
 
-void change_keyboard1(void)
+/// @brief Change keyboard layout to a custom variant
+/// Long press to DEL is used to add "-"
+void lvgl_change_keyboard1(void)
 {
     /*Create a keyboard map*/
     static const char * kb_map[] = {
@@ -257,23 +264,23 @@ void change_keyboard1(void)
     
 }
 
-void startup_actions(void)
+void lvgl_startup_actions(void)
 {
     memset(gps_channels_gui, 0, sizeof(gps_channels_gui));
 
     lv_obj_add_state(ui_btnStop, LV_STATE_DISABLED);
     lv_obj_add_state(ui_btnRestartAcq, LV_STATE_DISABLED);
 
-    create_state_table();
-    change_keyboard1();
-    prepare_iq_plot();
-    prepare_pos_plot();
+    lvgl_create_state_table();
+    lvgl_change_keyboard1();
+    lvgl_prepare_iq_plot();
+    lvgl_prepare_pos_plot();
 
     lvgl_update_init_configure_controls(gps_channels);
     
 }
 
-void create_state_table(void)
+void lvgl_create_state_table(void)
 {
     table_state = lv_table_create(ui_ScreenState);
     lv_obj_set_size(table_state, 309, 156);
@@ -295,7 +302,7 @@ void create_state_table(void)
 }
 
 //Prepare IQ plot - init
-void prepare_iq_plot(void)
+void lvgl_prepare_iq_plot(void)
 {
 #if (ENABLE_IQ_PLOT)
     lv_chart_set_point_count(ui_Chart1, IQ_PLOT_POINTS_CNT);
@@ -309,7 +316,7 @@ void prepare_iq_plot(void)
 }
 
 //Prepare Position plot - init
-void prepare_pos_plot(void)
+void lvgl_prepare_pos_plot(void)
 {
     lv_chart_set_point_count(ui_ChartPos, 5);
     lv_chart_set_range(ui_ChartPos, LV_CHART_AXIS_PRIMARY_X, -POS_PLOT_MAX_M, POS_PLOT_MAX_M);
@@ -379,7 +386,27 @@ void lvgl_store_new_position(sol_t *gps_sol_p, double *position)
 }
 #endif
 
-//Called periodically from user_gui_update_cb <= TIMER <= lv_timer_handler() in gui_task()
+/// @brief Called periodically from user_gui_update_cb <= TIMER <= lv_timer_handler() in gui_task()
+void lvgl_redraw_configure_screen(void)
+{
+    uint8_t res = lvgl_check_configure_controls();
+
+    if (res)
+    {
+        lv_label_set_text(ui_Label1, "Configuration");
+	    //Set active
+	    lv_obj_clear_state(ui_btnStartStop, LV_STATE_DISABLED);
+    }    
+    else
+    {
+        lv_label_set_text(ui_Label1, "Configuration " LV_SYMBOL_CLOSE LV_SYMBOL_CLOSE);
+        //Disable button
+	    lv_obj_add_state(ui_btnStartStop, LV_STATE_DISABLED);
+    }    
+
+}
+
+/// @brief Called periodically from user_gui_update_cb <= TIMER <= lv_timer_handler() in gui_task()
 void lvgl_redraw_state_screen(void)
 {
     char tmp_txt[USER_GUI_MAX_LINE_LENGTH];
@@ -438,7 +465,7 @@ void lvgl_redraw_state_screen(void)
     lv_label_set_text(ui_lblStateCommon, tmp_txt);
 }
 
-//Called periodically from user_gui_update_cb <= TIMER <= lv_timer_handler() in gui_task()
+/// @brief Called periodically from user_gui_update_cb <= TIMER <= lv_timer_handler() in gui_task()
 void lvgl_redraw_iq_screen(void)
 {
     uint8_t idx = lv_roller_get_selected(ui_Roller1);
@@ -448,7 +475,7 @@ void lvgl_redraw_iq_screen(void)
     lv_chart_set_ext_y_array(ui_Chart1, lvgl_iq_series, gps_channels[idx].tracking_data.plot_q);
 }
 
-//Called periodically from user_gui_update_cb <= TIMER <= lv_timer_handler() in gui_task()
+/// @brief Called periodically from user_gui_update_cb <= TIMER <= lv_timer_handler() in gui_task()
 void lvgl_redraw_position_screen(void)
 {
 #if (ENABLE_CALC_POSITION)
@@ -519,6 +546,49 @@ void print_state_conv_pos(float lat, float lon, float *x, float *y)
   *x = long_deg_to_m * lon;
 }
 
+
+/// @brief Check that GUI sat. values are correct
+/// @param  
+/// @return Return 1 if values are correct
+uint8_t lvgl_check_configure_controls(void)
+{
+    lv_obj_t *txt_prn_list[GPS_SAT_CNT] =
+        {ui_TextAreaPRN1, ui_TextAreaPRN2, ui_TextAreaPRN3, ui_TextAreaPRN4};
+    lv_obj_t *txt_freq_list[GPS_SAT_CNT] =
+        {ui_TextAreaFreq1, ui_TextAreaFreq2, ui_TextAreaFreq3, ui_TextAreaFreq4};
+
+    for (uint8_t i = 0; i < GPS_SAT_CNT; i++)
+    {
+        int tmp_val = 0;
+        const char *prn_txt = lv_textarea_get_text(txt_prn_list[i]);
+        int len = strlen(prn_txt);
+        int res = sscanf(prn_txt, "%d", &tmp_val);
+
+        if (len > 0)
+        {
+            if ((tmp_val < 1) || (tmp_val > MAX_PRN_VAL) || (res == 0))
+                return 0;
+        }
+        else
+            return 0; //PRN must be set
+
+        tmp_val = 0;
+        const char *freq_txt = lv_textarea_get_text(txt_freq_list[i]);
+        len = strlen(freq_txt);
+        res = sscanf(freq_txt, "%d", &tmp_val);
+
+        if (len > 0)
+        {
+            if ((tmp_val < -ACQ_SEARCH_FREQ_HZ) || 
+                (tmp_val > ACQ_SEARCH_FREQ_HZ) || (res == 0))
+                return 0;
+        }
+        
+    }
+
+    return 1;
+}
+
 /// @brief Load satellites settings - "Configure" screen
 void lvgl_update_init_configure_controls(gps_ch_t *channels)
 {
@@ -584,6 +654,7 @@ void lvgl_read_sat_cfg_from_gui(gps_ch_t *channels)
         sscanf(freq_txt, "%d", &tmp_val);
         channels[i].acq_data.given_freq_offset_hz = (int16_t)tmp_val;
 
+        tmp_val = 0;
         const char *prn_txt = lv_textarea_get_text(txt_prn_list[i]);
         sscanf(prn_txt, "%d", &tmp_val);
         channels[i].prn = (int16_t)tmp_val;

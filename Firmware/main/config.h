@@ -1,14 +1,14 @@
 #ifndef _CONFIG_H
 #define _CONFIG_H
 
-#define LED_R_PIN        4
-#define LED_G_PIN        16
-#define LED_B_PIN        17
+#define LED_R_PIN               4
+#define LED_G_PIN               16
+#define LED_B_PIN               17
 
-#define GPS_SPI_NAME        SPI3_HOST //SPI3
-#define GPS_SPI_CLK_PIN     18
-#define GPS_SPI_MOSI_PIN    23
-#define GPS_SPI_CS_PIN      5
+#define GPS_SPI_NAME            SPI3_HOST //SPI3
+#define GPS_SPI_CLK_PIN         18
+#define GPS_SPI_MOSI_PIN        23
+#define GPS_SPI_CS_PIN          5
 
 //*****************************************************
 
@@ -26,21 +26,22 @@
 
 //******************************************************
 
-
 #define ENABLE_RTCM_SEND        0
 
-//Calculate receiver position by observations
+/// Calculate receiver position by observations
 #define ENABLE_CALC_POSITION   1
 
-// Accurate code phase averaging
+/// Accurate code phase averaging
 #define ENABLE_CODE_FILTER      1
 //Number of measurements, speed is 25 measurements in one channel per 100ms
 #define CODE_FILTER_LENGTH      100
 
-//Draw IQ plot
+/// Draw IQ plot
 #define ENABLE_IQ_PLOT          1
 #define IQ_PLOT_POINTS_CNT      50
 
+/// Max PRN code value, for checking ony
+#define MAX_PRN_VAL             32
 
 #define ACQ_SEARCH_FREQ_HZ      (7000) //Search zone is x2
 #define ACQ_SEARCH_STEP_HZ      (500)

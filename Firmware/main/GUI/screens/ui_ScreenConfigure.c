@@ -13,9 +13,9 @@ void ui_ScreenConfigure_screen_init(void)
     ui_Label1 = lv_label_create(ui_ScreenConfigure);
     lv_obj_set_width(ui_Label1, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_height(ui_Label1, LV_SIZE_CONTENT);    /// 1
-    lv_obj_set_x(ui_Label1, -106);
-    lv_obj_set_y(ui_Label1, -108);
-    lv_obj_set_align(ui_Label1, LV_ALIGN_CENTER);
+    lv_obj_set_x(ui_Label1, 5);
+    lv_obj_set_y(ui_Label1, 5);
+    lv_obj_set_align(ui_Label1, LV_ALIGN_TOP_LEFT);
     lv_label_set_text(ui_Label1, "Configuration");
 
     ui_btnStartStop = lv_btn_create(ui_ScreenConfigure);
