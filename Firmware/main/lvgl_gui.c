@@ -5,15 +5,13 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "esp_chip_info.h"
-//#include "esp_flash.h"
-//#include "esp_system.h"
-//#include "driver/gpio.h"
 #include "esp_timer.h"
 #include "GUI/ui.h"
 #include "lvgl_gui.h"
 #include <esp_log.h>
 #include <math.h>
 
+#include "gps_master.h"
 #include "signal_capture.h"
 #include "config.h"
 
@@ -58,6 +56,7 @@ lv_chart_series_t *lvgl_pos_series;
   sol_t gui_gps_sol = {0};
   double gui_final_pos[3];
   uint8_t gui_last_pos_ok_flag = 0;
+  uint32_t gui_gps_pos_timestamp = 0;//system time
 #endif
 
 //*************************************************************
@@ -380,6 +379,7 @@ void lvgl_store_new_position(sol_t *gps_sol_p, double *position)
         memcpy(&gui_gps_sol, gps_sol_p, sizeof(sol_t));
         memcpy(gui_final_pos, position, sizeof(gui_final_pos));
         gui_last_pos_ok_flag = 1;
+        gui_gps_pos_timestamp = signal_capture_get_packet_cnt();
     }
     else
         gui_last_pos_ok_flag = 0;
@@ -389,6 +389,10 @@ void lvgl_store_new_position(sol_t *gps_sol_p, double *position)
 /// @brief Called periodically from user_gui_update_cb <= TIMER <= lv_timer_handler() in gui_task()
 void lvgl_redraw_configure_screen(void)
 {
+    if (gps_master_running())
+        return;
+
+    //Draw state of the conrols check at the "Configure" screen
     uint8_t res = lvgl_check_configure_controls();
 
     if (res)

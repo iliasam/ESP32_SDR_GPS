@@ -40,6 +40,7 @@
 
 //******************************************************************
 obsd_t obsd[GPS_SAT_CNT];
+uint8_t gps_master_new_obs_flag = 0;
 
 //Flag that at least one sat. need acquisition
 uint8_t gps_common_need_acq = 1;
@@ -340,6 +341,7 @@ void gps_master_final_pseudorange_calc(
     channels[i].obs_data.tow_s = channels[ref_idx].eph_data.tow_gpst + 
       ((float)(ref_time_diff_ms + i * TRACKING_CH_LENGTH) / PRN_SPEED_HZ); //to seconds
   }
+  gps_master_new_obs_flag = 1;
 }
 
 
@@ -405,7 +407,7 @@ void gps_master_code_phase_filter_reset(
 
 #if (ENABLE_CALC_POSITION)
 //Calculate receiver position - handling, do not run solving here!
-//Called from high priority task
+//Called periodically from master - high priority task
 void gps_master_calculate_pos_handling(gps_ch_t* channels)
 {
   static uint32_t prev_calc_time_ms = 0;
@@ -415,6 +417,9 @@ void gps_master_calculate_pos_handling(gps_ch_t* channels)
     //Processing already running solving
     return;
   }
+
+  if (gps_master_new_obs_flag == 0)
+    return;
   
   uint32_t curr_time_ms = signal_capture_get_packet_cnt();
   if ((curr_time_ms - prev_calc_time_ms) > GPS_CALC_POS_PERIOD_MS)
@@ -431,6 +436,7 @@ void gps_master_calculate_pos_handling(gps_ch_t* channels)
     {
       //Copy data and set a flag for less priority task
       sdrobs2obsd(channels, GPS_SAT_CNT, obsd);
+      gps_master_new_obs_flag = 0;
       gps_common_need_solve = 1;
       prev_calc_time_ms = curr_time_ms;
     }
@@ -494,6 +500,14 @@ uint8_t gps_master_need_solve(void)
   return gps_common_need_solve;
 }
 
+/// @brief Rurturn receiving enable state
+/// @param  
+/// @return 1 if reciving is enabled
+uint8_t gps_master_running(void)
+{
+  return gps_run_enabled;
+}
+
 void gps_master_stop_channels(gps_ch_t* channels)
 {
   for (uint8_t i = 0; i < GPS_SAT_CNT; i++)
@@ -501,6 +515,7 @@ void gps_master_stop_channels(gps_ch_t* channels)
     memset(&channels[i].acq_data, 0, sizeof(gps_acq_t)); 
     memset(&channels[i].tracking_data, 0, sizeof(gps_tracking_t));
     memset(&channels[i].nav_data, 0, sizeof(gps_nav_data_t));
+    memset(&channels[i].eph_data, 0, sizeof(sdreph_t));
   }
 }
 
@@ -523,7 +538,8 @@ void gps_master_reset_to_aqc_start(gps_ch_t* channels)
     }
     channels[i].acq_data.state = GPS_ACQ_FREQ_SEARCH_DONE;
     memset(&channels[i].tracking_data, 0, sizeof(gps_tracking_t));
-    memset(&channels[i].nav_data, 0, sizeof(gps_nav_data_t)); 
+    memset(&channels[i].nav_data, 0, sizeof(gps_nav_data_t));
+    memset(&channels[i].eph_data, 0, sizeof(sdreph_t));
   }
 }
 

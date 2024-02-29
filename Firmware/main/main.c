@@ -62,17 +62,17 @@ void app_main(void)
     memset(&gps_channels[0], 0, sizeof(gps_channels));
 
     // user can enter known doppler frequency to make acquisition much faster
-    gps_channels[0].prn = 5;
-    //gps_channels[0].acq_data.given_freq_offset_hz = 900;
+    gps_channels[0].prn = 1;
+    gps_channels[0].acq_data.given_freq_offset_hz = 0;
 
-    gps_channels[1].prn = 14;
-    //gps_channels[1].acq_data.given_freq_offset_hz = 4000;
+    gps_channels[1].prn = 2;
+    gps_channels[1].acq_data.given_freq_offset_hz = 0;
 
-    gps_channels[2].prn = 20;
-    //gps_channels[2].acq_data.given_freq_offset_hz = -1000;
+    gps_channels[2].prn = 3;
+    gps_channels[2].acq_data.given_freq_offset_hz = 0;
 
-    gps_channels[3].prn = 30;
-    //gps_channels[3].acq_data.given_freq_offset_hz = 2000;
+    gps_channels[3].prn = 4;
+    gps_channels[3].acq_data.given_freq_offset_hz = 0;
 
 #if (ENABLE_CALC_POSITION)
     gps_pos_solve_init(gps_channels);

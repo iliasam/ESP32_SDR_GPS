@@ -29,6 +29,7 @@
     "system_error": "c",
     "regex": "c",
     "esp_log.h": "c",
-    "functional": "c"
+    "functional": "c",
+    "math.h": "c"
   }
 }

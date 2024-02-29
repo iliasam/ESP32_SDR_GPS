@@ -12,6 +12,7 @@ uint8_t gps_master_is_code_search3(gps_ch_t* channels);
 
 uint8_t gps_master_need_acq(void);
 uint8_t gps_master_need_solve(void);
+uint8_t gps_master_running(void);
 void gps_master_run_solving(void);
 
 void gps_master_reset_to_aqc_start(gps_ch_t* channels);
