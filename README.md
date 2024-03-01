@@ -29,7 +29,7 @@ RF frontend pinout (See config.h):
 #define GPS_SPI_MOSI_PIN    23 //MAX2769 - I0  
 #define GPS_SPI_CS_PIN      5  //To GND  
   
-Part of the code is taken from these projects:
+Part of the code is taken from these projects:  
 https://github.com/tomojitakasu/RTKLIB  
 https://github.com/taroz/GNSS-SDRLIB  
 https://github.com/VitorAlho/lvgl_esp32_drivers  
