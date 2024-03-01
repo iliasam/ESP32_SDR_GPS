@@ -1,6 +1,7 @@
 # ESP32_SDR_GPS
 Software GPS receiver for ESP32  
 See article (in Russian): https://habr.com/ru/articles/789382/  
+You can find same project for **STM32** here: https://github.com/iliasam/STM32F4_SDR_GPS  
   
 This is a demo project of ESP32 based SDR GPS receiver.  
 No additional factory/commercial "black box" GPS receiver is needed here - just connect MAX2769 to the ESP32 MCU.  
@@ -32,4 +33,5 @@ Part of the code is taken from these projects:
 https://github.com/tomojitakasu/RTKLIB  
 https://github.com/taroz/GNSS-SDRLIB  
 https://github.com/VitorAlho/lvgl_esp32_drivers  
+
 
