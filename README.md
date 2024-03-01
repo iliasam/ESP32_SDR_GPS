@@ -5,7 +5,9 @@ See article (in Russian): https://habr.com/ru/articles/789382/
 This is a demo project of ESP32 based SDR GPS receiver.  
 No additional factory/commercial "black box" GPS receiver is needed here - just connect MAX2769 to the ESP32 MCU.  
 All "raw" GPS signal processing is done at the ESP32.  
-Results of the receiving are displayed at the LCD.   
+Results of the receiving are displayed at the LCD:   
+<img src="https://github.com/iliasam/ESP32_SDR_GPS/blob/main/Images/photo.jpg" width="500"> 
+  
 <img src="https://github.com/iliasam/ESP32_SDR_GPS/blob/main/Images/Drawing_esp32b.png" width="800">  
   
 **Video about this project:**  
