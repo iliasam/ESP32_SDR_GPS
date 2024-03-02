@@ -23,6 +23,19 @@ ESP-IDF 5.0 is used here
 
 User must enter PRN codes of 4 satellites in GUI before start.  
 User can enter Doppler frequency offset to make acquisition much faster. "-" symbol is entered by holding "delete" GUI key.  
+
+Compiler output:  
+Total sizes:
+Used static DRAM:  134404 bytes (  46332 remain, 74.4% used)  
+      .data size:    8372 bytes  
+      .bss  size:  126032 bytes  
+Used static IRAM:   58930 bytes (  72142 remain, 45.0% used)  
+      .text size:   57903 bytes  
+   .vectors size:    1027 bytes  
+Used Flash size :  480075 bytes  
+      .text     :  393267 bytes  
+      .rodata   :   86552 bytes  
+Total image size:  547377 bytes (.bin may be padded larger)  
   
 RF frontend pinout (See config.h):  
 #define GPS_SPI_CLK_PIN     18 //MAX2769 - CLKOUT  
