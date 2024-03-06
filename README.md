@@ -39,7 +39,7 @@ Total image size:  547377 bytes (.bin may be padded larger)
   
 RF frontend pinout (See config.h):  
 #define GPS_SPI_CLK_PIN     18 //MAX2769 - CLKOUT  
-#define GPS_SPI_MOSI_PIN    23 //MAX2769 - I0  
+#define GPS_SPI_MOSI_PIN    23 //MAX2769 - I1  
 #define GPS_SPI_CS_PIN      5  //To GND  
   
 Part of the code is taken from these projects:  
